@@ -1,16 +1,17 @@
-// Five-stage pipeline: dual-phase (clka PC seq, clkb pipeline + regfile write + DMEM).
+// clka PC seq, clkb pipeline and regfile write and DMEM 
 // Branch / JAL / RET resolved in EX. next_pc MUX: EX targets +1 sequential when no redirect.
+// if_instr_pi: fetched instruction word from external IMEM. pc_fetch_po: current PC for IMEM read.
 
-`include "defines.vh"
-
-// clka / clkb: two non-overlapping phases; PC advances on clka, pipeline on clkb. reset_pi: async clear.
 module processor (
     input wire clka,
     input wire clkb,
-    input wire reset_pi
+    input wire reset_pi,
+    input  wire [15:0] if_instr_pi,
+    output wire [3:0]  pc_fetch_po,
+    output wire        halted_po
 );
 
-    wire [15:0] if_instr;
+    wire [15:0] if_instr = if_instr_pi;
     wire [3:0]  pc_fetch;
 
     reg [15:0] if_id_instrM;
@@ -60,10 +61,7 @@ module processor (
     wire [15:0] rf_wd;
     wire        rf_we;
 
-    instruction_mem imem (
-        .imem_addr_pi(pc_fetch),
-        .instruction_po(if_instr)
-    );
+    assign pc_fetch_po = pc_fetch;
 
     decode dec (
         .instr_pi(if_id_instrM),
@@ -307,5 +305,6 @@ module processor (
 
     assign rf_wd = wb_mux;
     assign rf_we = mem_wb_weM & ~mem_wb_haltM;
+    assign halted_po = halt_cpu;
 
 endmodule

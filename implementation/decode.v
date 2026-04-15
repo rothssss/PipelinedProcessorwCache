@@ -1,8 +1,6 @@
 // control_po: {JAL,RET,Branch,Store,Load,ALU1op,ALU2op}. 
 // LD layout: rd=[11:9], rs=[8:6], imm6=[5:0] (6-bit offset changed from original 9-bit in doc)
 
-`include "defines.vh"
-
 module decode (
     input  wire [15:0] instr_pi,
     output wire [3:0]  opCode_po,

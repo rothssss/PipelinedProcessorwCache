@@ -1,7 +1,5 @@
 // branchCond_po: |op1_pi (BNEZ tests rs != 0 using forwarded op1).
 
-`include "defines.vh"
-
 module alu (
     input wire [15:0] op1_pi,
     input wire [15:0] op2_pi,
