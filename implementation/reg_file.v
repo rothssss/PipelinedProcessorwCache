@@ -28,7 +28,7 @@ module reg_file (
 
     assign dbg_data_po = regs[dbg_addr_pi];
 
-    always @(negedge clkb or posedge reset_pi) begin
+    always @(negedge clkb) begin
         if (reset_pi) begin
             for (i = 0; i < 8; i = i + 1)
                 regs[i] <= 16'b0;

@@ -211,14 +211,14 @@ module processor (
     // next_pc_sel: redirect on EX-stage control flow (branch/JAL/RET) else sequential word PC+1.
     wire [3:0] next_pc_sel = take_flow & ~stall_total ? flow_pc : (pc_reg + 4'd1);
 
-    always @(negedge clka or posedge reset_pi) begin
+    always @(negedge clka) begin
         if (reset_pi)
             pc_reg <= 4'b0;
         else if (~halt_cpu & ~stall_total)
             pc_reg <= next_pc_sel;
     end
 
-    always @(negedge clkb or posedge reset_pi) begin
+    always @(negedge clkb) begin
         if (reset_pi)
             pc_out <= 4'b0;
         else
@@ -228,7 +228,7 @@ module processor (
     wire [15:0] jal_link = pc_ext + 16'd1;
     wire [15:0] alu_fin  = id_ex_j ? jal_link : alu_res_raw;
 
-    always @(negedge clkb or posedge reset_pi) begin
+    always @(negedge clkb) begin
         if (reset_pi) begin
             if_id_instrM  <= 16'b0;
             if_id_pcM     <= 4'b0;

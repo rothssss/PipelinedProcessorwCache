@@ -81,8 +81,9 @@ module data_mem_cached (
         endcase
     end
 
-    integer wi, bidx;
-    always @(negedge clkb or posedge reset_pi) begin
+    integer wi;
+    reg [4:0] bidx;
+    always @(negedge clkb) begin
         if (reset_pi) begin
             currentState <= S0;
             for (wi = 0; wi < 32; wi = wi + 1)

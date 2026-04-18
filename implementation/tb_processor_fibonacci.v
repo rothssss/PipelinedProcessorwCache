@@ -22,7 +22,7 @@
 
 `timescale 1ns / 1ps
 
-module tb_processor;
+module tb_processor_fibonacci;
 
     reg        clka;
     reg        clkb;
@@ -36,8 +36,8 @@ module tb_processor;
     reg  [6:0]  dbg_addr;
     wire [15:0] dbg_data;
 
-    localparam SIM_CYCLES    = 4000;
-    localparam EXEC_CHECK_AT = 1000;
+    localparam SIM_CYCLES    = 400;
+    localparam EXEC_CHECK_AT = 100;
 
     // Non-overlapping two-phase clock: 20 ns period (50 MHz)
     //   t+0  : dead zone (both low)
@@ -48,10 +48,11 @@ module tb_processor;
     //   t+17 : dead zone start, next period at t+20
     initial begin clka = 0; clkb = 0; end
     always begin
-        #50  clka = 1;
-        #50  clka = 0;
-        #50  clkb = 1;
-        #50  clkb = 0;
+        #2  clka = 1;
+        #5  clka = 0;
+        #3  clkb = 1;
+        #5  clkb = 0;
+        #5;
     end
 
     system_top dut (
@@ -128,20 +129,21 @@ module tb_processor;
         reset_pi = 1'b0;
         @(negedge clkb);
 
-        //        PC  Instruction                          Interpretation
-        load_word({`ADDI, 3'd1, 3'd0, 6'd5});        //  0  R1 = 5
-        load_word({`ADDI, 3'd2, 3'd0, 6'd3});        //  1  R2 = 3
-        load_word({`ADD,  3'd3, 3'd1, 3'd2, 3'b000});//  2  R3 = R1+R2 = 8
-        load_word({`ST,   3'd0, 3'd3, 6'd0});        //  3  MEM[0] = R3
-        load_word({`ADDI, 3'd4, 3'd0, 6'd0});        //  4  R4 = 0
-        load_word({`LD,   3'd5, 3'd4, 6'd0});        //  5  R5 = MEM[0] (expect 8)
-        load_word({`ADDI, 3'd1, 3'd1, 6'h3F});       //  6  R1 = R1-1 (loop body)
-        load_word({`BNEZ, 3'd1, 3'd0, 6'b111110});   //  7  if R1!=0 goto PC 6
-        load_word({`JAL,  3'd0, 9'b111111111});       //  8  JAL to self (infinite)
-        load_word({`NOP,  12'h000});                  //  9  (unreachable)
-        load_word({`HALT, 12'h000});                  // 10
-        load_word({`HALT, 12'h000});                  // 11
-        load_word({`HALT, 12'h000});                  // 12
+        // Fibonacci program (stores each newly computed value to DMEM through cache)
+        //        PC  Instruction                           Interpretation
+        load_word({`ADDI, 3'd1, 3'd0, 6'd0});         //  0  R1 = a = 0
+        load_word({`ADDI, 3'd2, 3'd0, 6'd1});         //  1  R2 = b = 1
+        load_word({`ADDI, 3'd3, 3'd0, 6'd0});         //  2  R3 = ptr = 0
+        load_word({`ADDI, 3'd4, 3'd0, 6'd8});         //  3  R4 = loop count (8 values)
+        load_word({`ADD,  3'd5, 3'd1, 3'd2, 3'b000}); //  4  R5 = a + b (new Fibonacci)
+        load_word({`ST,   3'd3, 3'd5, 6'd0});         //  5  MEM[ptr] = R5
+        load_word({`ADDI, 3'd3, 3'd3, 6'd1});         //  6  ptr++
+        load_word({`ADD,  3'd1, 3'd2, 3'd0, 3'b000}); //  7  a = b
+        load_word({`ADD,  3'd2, 3'd5, 3'd0, 3'b000}); //  8  b = new Fibonacci
+        load_word({`ADDI, 3'd4, 3'd4, 6'h3F});        //  9  count--
+        load_word({`BNEZ, 3'd4, 3'd0, 6'b111001});    // 10  if count!=0 goto PC 4
+        load_word({`LD,   3'd7, 3'd0, 6'd0});         // 11  R7 = MEM[0] (=1), explicit read test
+        load_word({`JAL,  3'd0, 9'b111111111});       // 12  JAL to self (infinite)
         load_word({`HALT, 12'h000});                  // 13
         load_word({`HALT, 12'h000});                  // 14
         load_word({`HALT, 12'h000});                  // 15
@@ -154,17 +156,20 @@ module tb_processor;
         // Verify IMEM contents through debug port (addresses 0x10-0x1F)
         $display("");
         $display("===== IMEM Verification (via debug port) =====");
-        dbg_read(7'h10, dbg_tmp); check16("IMEM[00]", dbg_tmp, {`ADDI, 3'd1, 3'd0, 6'd5});
-        dbg_read(7'h11, dbg_tmp); check16("IMEM[01]", dbg_tmp, {`ADDI, 3'd2, 3'd0, 6'd3});
-        dbg_read(7'h12, dbg_tmp); check16("IMEM[02]", dbg_tmp, {`ADD,  3'd3, 3'd1, 3'd2, 3'b000});
-        dbg_read(7'h13, dbg_tmp); check16("IMEM[03]", dbg_tmp, {`ST,   3'd0, 3'd3, 6'd0});
-        dbg_read(7'h14, dbg_tmp); check16("IMEM[04]", dbg_tmp, {`ADDI, 3'd4, 3'd0, 6'd0});
-        dbg_read(7'h15, dbg_tmp); check16("IMEM[05]", dbg_tmp, {`LD,   3'd5, 3'd4, 6'd0});
-        dbg_read(7'h16, dbg_tmp); check16("IMEM[06]", dbg_tmp, {`ADDI, 3'd1, 3'd1, 6'h3F});
-        dbg_read(7'h17, dbg_tmp); check16("IMEM[07]", dbg_tmp, {`BNEZ, 3'd1, 3'd0, 6'b111110});
-        dbg_read(7'h18, dbg_tmp); check16("IMEM[08]", dbg_tmp, {`JAL,  3'd0, 9'b111111111});
-        dbg_read(7'h19, dbg_tmp); check16("IMEM[09]", dbg_tmp, {`NOP,  12'h000});
-        for (i = 10; i < 16; i = i + 1) begin
+        dbg_read(7'h10, dbg_tmp); check16("IMEM[00]", dbg_tmp, {`ADDI, 3'd1, 3'd0, 6'd0});
+        dbg_read(7'h11, dbg_tmp); check16("IMEM[01]", dbg_tmp, {`ADDI, 3'd2, 3'd0, 6'd1});
+        dbg_read(7'h12, dbg_tmp); check16("IMEM[02]", dbg_tmp, {`ADDI, 3'd3, 3'd0, 6'd0});
+        dbg_read(7'h13, dbg_tmp); check16("IMEM[03]", dbg_tmp, {`ADDI, 3'd4, 3'd0, 6'd8});
+        dbg_read(7'h14, dbg_tmp); check16("IMEM[04]", dbg_tmp, {`ADD,  3'd5, 3'd1, 3'd2, 3'b000});
+        dbg_read(7'h15, dbg_tmp); check16("IMEM[05]", dbg_tmp, {`ST,   3'd3, 3'd5, 6'd0});
+        dbg_read(7'h16, dbg_tmp); check16("IMEM[06]", dbg_tmp, {`ADDI, 3'd3, 3'd3, 6'd1});
+        dbg_read(7'h17, dbg_tmp); check16("IMEM[07]", dbg_tmp, {`ADD,  3'd1, 3'd2, 3'd0, 3'b000});
+        dbg_read(7'h18, dbg_tmp); check16("IMEM[08]", dbg_tmp, {`ADD,  3'd2, 3'd5, 3'd0, 3'b000});
+        dbg_read(7'h19, dbg_tmp); check16("IMEM[09]", dbg_tmp, {`ADDI, 3'd4, 3'd4, 6'h3F});
+        dbg_read(7'h1A, dbg_tmp); check16("IMEM[10]", dbg_tmp, {`BNEZ, 3'd4, 3'd0, 6'b111001});
+        dbg_read(7'h1B, dbg_tmp); check16("IMEM[11]", dbg_tmp, {`LD,   3'd7, 3'd0, 6'd0});
+        dbg_read(7'h1C, dbg_tmp); check16("IMEM[12]", dbg_tmp, {`JAL,  3'd0, 9'b111111111});
+        for (i = 13; i < 16; i = i + 1) begin
             dbg_read(7'h10 + i[6:0], dbg_tmp);
             if (dbg_tmp !== {`HALT, 12'h000}) begin
                 $display("  FAIL IMEM[%02d] : got 0x%04h, expected HALT", i, dbg_tmp);
@@ -201,30 +206,42 @@ module tb_processor;
 
         $display("--- Register Checks ---");
         dbg_read(7'h00, dbg_tmp); check16("R0", dbg_tmp, 16'd0);
-        dbg_read(7'h01, dbg_tmp); check16("R1", dbg_tmp, 16'd0);
-        dbg_read(7'h02, dbg_tmp); check16("R2", dbg_tmp, 16'd3);
+        dbg_read(7'h01, dbg_tmp); check16("R1", dbg_tmp, 16'd21);
+        dbg_read(7'h02, dbg_tmp); check16("R2", dbg_tmp, 16'd34);
         dbg_read(7'h03, dbg_tmp); check16("R3", dbg_tmp, 16'd8);
         dbg_read(7'h04, dbg_tmp); check16("R4", dbg_tmp, 16'd0);
-        dbg_read(7'h05, dbg_tmp); check16("R5", dbg_tmp, 16'd8);
+        dbg_read(7'h05, dbg_tmp); check16("R5", dbg_tmp, 16'd34);
         dbg_read(7'h06, dbg_tmp); check16("R6", dbg_tmp, 16'd0);
-        dbg_read(7'h07, dbg_tmp); check16("R7", dbg_tmp, 16'd0);
+        dbg_read(7'h07, dbg_tmp); check16("R7", dbg_tmp, 16'd1);
 
-        // Data cache: ST wrote 8 to address 0.
-        // addr 0 -> cache index 0, word offset 0, tag 0.
-        // Cache data line 0 word 0 is at debug address 0x40.
+        // Data cache (dirty write-back): stored Fibonacci values at addresses 0..7.
         $display("--- Data Cache (via debug port) ---");
-        dbg_read(7'h40, dbg_tmp); check16("cache[0] word0", dbg_tmp, 16'd8);
+        dbg_read(7'h40, dbg_tmp); check16("cache[0] word0", dbg_tmp, 16'd1);
+        dbg_read(7'h41, dbg_tmp); check16("cache[0] word1", dbg_tmp, 16'd2);
+        dbg_read(7'h42, dbg_tmp); check16("cache[0] word2", dbg_tmp, 16'd3);
+        dbg_read(7'h43, dbg_tmp); check16("cache[0] word3", dbg_tmp, 16'd5);
+        dbg_read(7'h44, dbg_tmp); check16("cache[1] word0", dbg_tmp, 16'd8);
+        dbg_read(7'h45, dbg_tmp); check16("cache[1] word1", dbg_tmp, 16'd13);
+        dbg_read(7'h46, dbg_tmp); check16("cache[1] word2", dbg_tmp, 16'd21);
+        dbg_read(7'h47, dbg_tmp); check16("cache[1] word3", dbg_tmp, 16'd34);
 
-        // Cache metadata line 0 at debug address 0x50: expect valid=1, dirty=1, tag=0
+        // Cache metadata lines 0 and 1 should both be valid, dirty, tag=0.
         dbg_read(7'h50, dbg_tmp);
         $display("  META[0] = 0x%04h  (valid=%b dirty=%b tag=%b)",
                  dbg_tmp, dbg_tmp[2], dbg_tmp[1], dbg_tmp[0]);
         check16("META[0]", dbg_tmp, {13'b0, 1'b1, 1'b1, 1'b0});
+        dbg_read(7'h51, dbg_tmp);
+        $display("  META[1] = 0x%04h  (valid=%b dirty=%b tag=%b)",
+                 dbg_tmp, dbg_tmp[2], dbg_tmp[1], dbg_tmp[0]);
+        check16("META[1]", dbg_tmp, {13'b0, 1'b1, 1'b1, 1'b0});
 
-        // DMEM[0] via debug address 0x20: should still be 0 because cache is dirty
-        // (write-back has not flushed yet)
+        // Backing DMEM remains stale (no eviction/write-back happened yet).
         dbg_read(7'h20, dbg_tmp);
         $display("  DMEM[0] = %0d (0x%04h) (backing store, not yet written back)", $signed(dbg_tmp), dbg_tmp);
+        check16("DMEM[0]", dbg_tmp, 16'd0);
+        dbg_read(7'h24, dbg_tmp);
+        $display("  DMEM[4] = %0d (0x%04h) (backing store, not yet written back)", $signed(dbg_tmp), dbg_tmp);
+        check16("DMEM[4]", dbg_tmp, 16'd0);
 
         // PC via debug address 0x58
         $display("--- Pipeline ---");

@@ -88,7 +88,7 @@ module system_top (
     );
 
     // Loader FSM
-    always @(negedge clkb or posedge reset_pi) begin
+    always @(negedge clkb) begin
         if (reset_pi) begin
             state   <= S_LOAD;
             wr_addr <= 4'd0;

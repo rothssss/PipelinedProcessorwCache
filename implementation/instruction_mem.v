@@ -46,12 +46,6 @@ module instruction_mem (
     assign instruction_po = IMEM[imem_addr_pi];
     assign dbg_data_po    = IMEM[dbg_addr_pi];
 
-    integer ii;
-    initial begin
-        for (ii = 0; ii < 16; ii = ii + 1)
-            IMEM[ii] = 16'h0000;
-    end
-
     always @(negedge clkb) begin
         if (imem_we_pi)
             IMEM[imem_waddr_pi] <= imem_wdata_pi;
