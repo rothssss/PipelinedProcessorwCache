@@ -11,7 +11,10 @@ module data_mem_cached (
     input wire [4:0] addr_pi,
     input wire [15:0] wdata_pi,
     output wire [15:0] rdata_po,
-    output wire stall_po
+    output wire stall_po,
+    // Debug read ports, see README debug session. 
+    input  wire [5:0]  dbg_addr_pi,
+    output reg  [15:0] dbg_data_po
 );
 
     localparam S0 = 2'd0;
@@ -127,6 +130,29 @@ module data_mem_cached (
                 default: ;
             endcase
             currentState <= nextState;
+        end
+    end
+
+    // Debug read mux
+    reg [63:0] dbg_cache_block;
+    always @(*) begin
+        dbg_data_po = 16'b0;
+        dbg_cache_block = 64'b0;
+        if (dbg_addr_pi < 6'd32) begin
+            dbg_data_po = DMEM[dbg_addr_pi[4:0]];
+        end else if (dbg_addr_pi < 6'd48) begin
+            dbg_cache_block = DATA_ARRAY[dbg_addr_pi[3:2]];
+            case (dbg_addr_pi[1:0])
+                2'd0: dbg_data_po = dbg_cache_block[15:0];
+                2'd1: dbg_data_po = dbg_cache_block[31:16];
+                2'd2: dbg_data_po = dbg_cache_block[47:32];
+                2'd3: dbg_data_po = dbg_cache_block[63:48];
+            endcase
+        end else if (dbg_addr_pi < 6'd52) begin // this is probing the cache, see cache def. 
+            dbg_data_po = {13'b0,
+                           VALID_ARRAY[dbg_addr_pi[1:0]],
+                           DIRTY_ARRAY[dbg_addr_pi[1:0]],
+                           TAG_ARRAY[dbg_addr_pi[1:0]]};
         end
     end
 

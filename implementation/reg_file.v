@@ -9,7 +9,10 @@ module reg_file (
     input wire we_pi,
     input wire [15:0] wdata_pi,
     output wire [15:0] rdata1_po,
-    output wire [15:0] rdata2_po
+    output wire [15:0] rdata2_po,
+    // Debug read port (active regardless of processor state)
+    input  wire [2:0]  dbg_addr_pi,
+    output wire [15:0] dbg_data_po
 );
 
     reg [15:0] regs [0:7];
@@ -22,6 +25,8 @@ module reg_file (
                        ? wdata_pi : r1_raw;
     assign rdata2_po = (we_pi && (waddr_pi == raddr2_pi) && (raddr2_pi != 3'b000))
                        ? wdata_pi : r2_raw;
+
+    assign dbg_data_po = regs[dbg_addr_pi];
 
     always @(negedge clkb or posedge reset_pi) begin
         if (reset_pi) begin

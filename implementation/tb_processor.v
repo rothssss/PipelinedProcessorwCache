@@ -1,11 +1,13 @@
-// tb of the processor. 
-// Modify the load_words block in the middle and the expected outputs checks to change programs. 
+// Testbench for PipelinedProcessorwCache with two-phase clock and debug port.
+// Loads a program via the serial interface, runs it, then reads back
+// registers, IMEM, DMEM, cache state, and PC through the debug port.
 
 `timescale 1ns / 1ps
 
 module tb_processor;
 
-    reg        clk;
+    reg        clka;
+    reg        clkb;
     reg        reset_pi;
     reg [15:0] instr_data;
     reg        instr_valid;
@@ -13,27 +15,45 @@ module tb_processor;
     wire       halted;
     wire       ready;
 
-    localparam SIM_CYCLES      = 400;
-    localparam EXEC_CHECK_AT   = 100;
+    reg  [6:0]  dbg_addr;
+    wire [15:0] dbg_data;
 
-    initial clk = 1'b0;
-    always #5 clk = ~clk;
+    localparam SIM_CYCLES    = 400;
+    localparam EXEC_CHECK_AT = 100;
+
+    // Non-overlapping two-phase clock: 20 ns period (50 MHz)
+    //   t+0  : dead zone (both low)
+    //   t+2  : clka rises
+    //   t+7  : clka falls  (negedge clka)
+    //   t+10 : clkb rises
+    //   t+15 : clkb falls  (negedge clkb)
+    //   t+17 : dead zone start, next period at t+20
+    initial begin clka = 0; clkb = 0; end
+    always begin
+        #2  clka = 1;
+        #5  clka = 0;
+        #3  clkb = 1;
+        #5  clkb = 0;
+        #5;
+    end
 
     system_top dut (
-        .clk            (clk),
+        .clka           (clka),
+        .clkb           (clkb),
         .reset_pi       (reset_pi),
         .instr_data_pi  (instr_data),
         .instr_valid_pi (instr_valid),
         .load_done_pi   (load_done),
         .halted_po      (halted),
-        .ready_po       (ready)
+        .ready_po       (ready),
+        .dbg_addr_pi    (dbg_addr),
+        .dbg_data_po    (dbg_data)
     );
 
     integer i;
     integer err_count;
     integer exec_cycle;
 
-    // Opcode mnemonic for trace readability (4 ASCII chars, left-aligned)
     function [4*8-1:0] opc_str;
         input [3:0] opc;
         begin
@@ -57,7 +77,6 @@ module tb_processor;
         end
     endfunction
 
-    // Compare actual vs expected, log result, bump err_count on mismatch
     task check16;
         input [8*20-1:0] label;
         input [15:0]     actual;
@@ -72,33 +91,46 @@ module tb_processor;
         end
     endtask
 
+    // Debug read helper: set address, wait for combinational propagation, return data
+    task dbg_read;
+        input  [6:0]  addr;
+        output [15:0] data;
+        begin
+            dbg_addr = addr;
+            #1;
+            data = dbg_data;
+        end
+    endtask
+
+    // Load one instruction word on the serial interface
     task load_word;
         input [15:0] word;
         begin
+            @(negedge clka);
             instr_data  = word;
             instr_valid = 1'b1;
-            @(negedge clk);
+            @(negedge clkb);
         end
     endtask
 
 
-// program =============================================================================
+// Program loading and IMEM verification via debug port
+    reg [15:0] dbg_tmp;
 
-    // load program, verify IMEM, print trace header
     initial begin
         err_count   = 0;
         exec_cycle  = 0;
+        dbg_addr    = 7'b0;
         reset_pi    = 1'b1;
         instr_data  = 16'b0;
         instr_valid = 1'b0;
         load_done   = 1'b0;
 
-        repeat (3) @(negedge clk);
+        repeat (3) @(negedge clkb);
         reset_pi = 1'b0;
-        @(negedge clk);
-        // use the following template to load instructions
-        //        PC  Instruction                          interpretation
+        @(negedge clkb);
 
+        //        PC  Instruction                          Interpretation
         load_word({`ADDI, 3'd1, 3'd0, 6'd5});        //  0  R1 = 5
         load_word({`ADDI, 3'd2, 3'd0, 6'd3});        //  1  R2 = 3
         load_word({`ADD,  3'd3, 3'd1, 3'd2, 3'b000});//  2  R3 = R1+R2 = 8
@@ -107,53 +139,51 @@ module tb_processor;
         load_word({`LD,   3'd5, 3'd4, 6'd0});        //  5  R5 = MEM[0] (expect 8)
         load_word({`ADDI, 3'd1, 3'd1, 6'h3F});       //  6  R1 = R1-1 (loop body)
         load_word({`BNEZ, 3'd1, 3'd0, 6'b111110});   //  7  if R1!=0 goto PC 6
-        load_word({`JAL,  3'd0, 9'b111111111});      //  8  JAL to self (infinite)
-        load_word({`NOP,  12'h000});                 //  9  (unreachable)
-        load_word({`HALT, 12'h000});                 // 10  (unreachable)
-        load_word({`HALT, 12'h000});                 // 11
-        load_word({`HALT, 12'h000});                 // 12
-        load_word({`HALT, 12'h000});                 // 13
-        load_word({`HALT, 12'h000});                 // 14
-        load_word({`HALT, 12'h000});                 // 15
+        load_word({`JAL,  3'd0, 9'b111111111});       //  8  JAL to self (infinite)
+        load_word({`NOP,  12'h000});                  //  9  (unreachable)
+        load_word({`HALT, 12'h000});                  // 10
+        load_word({`HALT, 12'h000});                  // 11
+        load_word({`HALT, 12'h000});                  // 12
+        load_word({`HALT, 12'h000});                  // 13
+        load_word({`HALT, 12'h000});                  // 14
+        load_word({`HALT, 12'h000});                  // 15
 
         instr_valid = 1'b0;
         load_done   = 1'b1;
-        @(negedge clk);
+        @(negedge clkb);
         load_done = 1'b0;
 
-        // verify every IMEM word after loading
+        // Verify IMEM contents through debug port (addresses 0x10-0x1F)
         $display("");
-        $display("===== IMEM Verification =====");
-        check16("IMEM[00]", dut.imem.IMEM[ 0], {`ADDI, 3'd1, 3'd0, 6'd5});
-        check16("IMEM[01]", dut.imem.IMEM[ 1], {`ADDI, 3'd2, 3'd0, 6'd3});
-        check16("IMEM[02]", dut.imem.IMEM[ 2], {`ADD,  3'd3, 3'd1, 3'd2, 3'b000});
-        check16("IMEM[03]", dut.imem.IMEM[ 3], {`ST,   3'd0, 3'd3, 6'd0});
-        check16("IMEM[04]", dut.imem.IMEM[ 4], {`ADDI, 3'd4, 3'd0, 6'd0});
-        check16("IMEM[05]", dut.imem.IMEM[ 5], {`LD,   3'd5, 3'd4, 6'd0});
-        check16("IMEM[06]", dut.imem.IMEM[ 6], {`ADDI, 3'd1, 3'd1, 6'h3F});
-        check16("IMEM[07]", dut.imem.IMEM[ 7], {`BNEZ, 3'd1, 3'd0, 6'b111110});
-        check16("IMEM[08]", dut.imem.IMEM[ 8], {`JAL,  3'd0, 9'b111111111});
-        check16("IMEM[09]", dut.imem.IMEM[ 9], {`NOP,  12'h000});
-
+        $display("===== IMEM Verification (via debug port) =====");
+        dbg_read(7'h10, dbg_tmp); check16("IMEM[00]", dbg_tmp, {`ADDI, 3'd1, 3'd0, 6'd5});
+        dbg_read(7'h11, dbg_tmp); check16("IMEM[01]", dbg_tmp, {`ADDI, 3'd2, 3'd0, 6'd3});
+        dbg_read(7'h12, dbg_tmp); check16("IMEM[02]", dbg_tmp, {`ADD,  3'd3, 3'd1, 3'd2, 3'b000});
+        dbg_read(7'h13, dbg_tmp); check16("IMEM[03]", dbg_tmp, {`ST,   3'd0, 3'd3, 6'd0});
+        dbg_read(7'h14, dbg_tmp); check16("IMEM[04]", dbg_tmp, {`ADDI, 3'd4, 3'd0, 6'd0});
+        dbg_read(7'h15, dbg_tmp); check16("IMEM[05]", dbg_tmp, {`LD,   3'd5, 3'd4, 6'd0});
+        dbg_read(7'h16, dbg_tmp); check16("IMEM[06]", dbg_tmp, {`ADDI, 3'd1, 3'd1, 6'h3F});
+        dbg_read(7'h17, dbg_tmp); check16("IMEM[07]", dbg_tmp, {`BNEZ, 3'd1, 3'd0, 6'b111110});
+        dbg_read(7'h18, dbg_tmp); check16("IMEM[08]", dbg_tmp, {`JAL,  3'd0, 9'b111111111});
+        dbg_read(7'h19, dbg_tmp); check16("IMEM[09]", dbg_tmp, {`NOP,  12'h000});
         for (i = 10; i < 16; i = i + 1) begin
-            if (dut.imem.IMEM[i] !== {`HALT, 12'h000}) begin
-                $display("  FAIL IMEM[%02d] : got 0x%04h, expected HALT", i, dut.imem.IMEM[i]);
+            dbg_read(7'h10 + i[6:0], dbg_tmp);
+            if (dbg_tmp !== {`HALT, 12'h000}) begin
+                $display("  FAIL IMEM[%02d] : got 0x%04h, expected HALT", i, dbg_tmp);
                 err_count = err_count + 1;
             end else
                 $display("  OK   IMEM[%02d] = HALT", i);
         end
 
-        // execution trace 
         $display("");
         $display("[%0t] Program loaded, execution begins", $time);
         $display("");
-        $display("===== Phase 2: Execution Trace =====");
+        $display("===== Execution Trace =====");
         $display(" Cyc| PC |  IF  |  ID  |  EX  | MEM  |  WB  |");
     end
 
-    // Pipeline trace at the negegde clkb
-    // (half-period after the pipeline update on posedge clk = negedge clkb)
-    always @(negedge clk) begin
+    // Pipeline trace (uses hierarchical refs, simulation-only diagnostic)
+    always @(negedge clkb) begin
         if (dut.state == 1'b1) begin
             $write("C%03d| %2d | %s | %s | %s | %s | %s |",
                 exec_cycle,
@@ -164,59 +194,63 @@ module tb_processor;
                 opc_str(dut.proc.ex_mem_opcM),
                 opc_str(dut.proc.mem_wb_opcM)
             );
-            if (dut.proc.stall_total) $write(" STL"); // shows proc stalls
-            if (dut.proc.flush)       $write(" FLS"); // shows flushing piperegs
+            if (dut.proc.stall_total) $write(" STL");
+            if (dut.proc.flush)       $write(" FLS");
             if (dut.proc.rf_we && dut.proc.mem_wb_rdM != 3'b000)
                 $write(" R%0d<=%0d", dut.proc.mem_wb_rdM, $signed(dut.proc.rf_wd));
             $write("\n");
             exec_cycle = exec_cycle + 1;
         end
     end
-// checks ===============================================================================
-    // final state checks
+
+
+// Final state checks: everything read through the debug port
     initial begin
         wait (dut.state == 1'b1);
-        repeat (EXEC_CHECK_AT) @(negedge clk);
+        repeat (EXEC_CHECK_AT) @(negedge clkb);
 
         $display("");
-        $display("===== Final State Check (cycle %0d) =====", exec_cycle);
+        $display("===== Final State Check (cycle %0d, via debug port) =====", exec_cycle);
 
-        // Register file dump
+        // Register file (debug addresses 0x00-0x07)
         $display("--- Register File ---");
-        for (i = 0; i < 8; i = i + 1)
-            $display("  R%0d = %6d  (0x%04h)", i,
-                     $signed(dut.proc.rf.regs[i]), dut.proc.rf.regs[i]);
+        for (i = 0; i < 8; i = i + 1) begin
+            dbg_read(i[6:0], dbg_tmp);
+            $display("  R%0d = %6d  (0x%04h)", i, $signed(dbg_tmp), dbg_tmp);
+        end
 
-        // Expected final state after BNEZ loop drains and JAL spins at PC 8:
-        //   R0 = 0 (hardwired), R1 = 0 (decremented from 5),
-        //   R2 = 3, R3 = 8, R4 = 0, R5 = 8 (loaded from MEM[0]),
-        //   R6 = 0, R7 = 0  (never written).
         $display("--- Register Checks ---");
-        check16("R0", dut.proc.rf.regs[0], 16'd0);
-        check16("R1", dut.proc.rf.regs[1], 16'd0);
-        check16("R2", dut.proc.rf.regs[2], 16'd3);
-        check16("R3", dut.proc.rf.regs[3], 16'd8);
-        check16("R4", dut.proc.rf.regs[4], 16'd0);
-        check16("R5", dut.proc.rf.regs[5], 16'd8);
-        check16("R6", dut.proc.rf.regs[6], 16'd0);
-        check16("R7", dut.proc.rf.regs[7], 16'd0);
+        dbg_read(7'h00, dbg_tmp); check16("R0", dbg_tmp, 16'd0);
+        dbg_read(7'h01, dbg_tmp); check16("R1", dbg_tmp, 16'd0);
+        dbg_read(7'h02, dbg_tmp); check16("R2", dbg_tmp, 16'd3);
+        dbg_read(7'h03, dbg_tmp); check16("R3", dbg_tmp, 16'd8);
+        dbg_read(7'h04, dbg_tmp); check16("R4", dbg_tmp, 16'd0);
+        dbg_read(7'h05, dbg_tmp); check16("R5", dbg_tmp, 16'd8);
+        dbg_read(7'h06, dbg_tmp); check16("R6", dbg_tmp, 16'd0);
+        dbg_read(7'h07, dbg_tmp); check16("R7", dbg_tmp, 16'd0);
 
-        // data cache ST wrote 8 to address 0.
-        // addr 0 → cache index 0, word offset 0, tag 0.
-        // DATA_ARRAY[0][15:0] should be 8, line should be valid and dirty.
-        $display("--- Data Cache ---");
-        $display("  DATA_ARRAY[0] = 0x%016h", dut.proc.dmem.DATA_ARRAY[0]);
-        $display("  VALID[0]=%b  DIRTY[0]=%b  TAG[0]=%b",
-                 dut.proc.dmem.VALID_ARRAY[0],
-                 dut.proc.dmem.DIRTY_ARRAY[0],
-                 dut.proc.dmem.TAG_ARRAY[0]);
-        check16("cache[0] word0", dut.proc.dmem.DATA_ARRAY[0][15:0], 16'd8);
+        // Data cache: ST wrote 8 to address 0.
+        // addr 0 -> cache index 0, word offset 0, tag 0.
+        // Cache data line 0 word 0 is at debug address 0x40.
+        $display("--- Data Cache (via debug port) ---");
+        dbg_read(7'h40, dbg_tmp); check16("cache[0] word0", dbg_tmp, 16'd8);
 
-        // JAL at PC 8 is a self-loop (target = 8+1-1 = 8).
-        // HALT at PC 10+ is unreachable because the JAL flush always squashes it.
+        // Cache metadata line 0 at debug address 0x50: expect valid=1, dirty=1, tag=0
+        dbg_read(7'h50, dbg_tmp);
+        $display("  META[0] = 0x%04h  (valid=%b dirty=%b tag=%b)",
+                 dbg_tmp, dbg_tmp[2], dbg_tmp[1], dbg_tmp[0]);
+        check16("META[0]", dbg_tmp, {13'b0, 1'b1, 1'b1, 1'b0});
+
+        // DMEM[0] via debug address 0x20: should still be 0 because cache is dirty
+        // (write-back has not flushed yet)
+        dbg_read(7'h20, dbg_tmp);
+        $display("  DMEM[0] = %0d (0x%04h) (backing store, not yet written back)", $signed(dbg_tmp), dbg_tmp);
+
+        // PC via debug address 0x58
         $display("--- Pipeline ---");
-        $display("  pc_out   = %0d", dut.proc.pc_out);
-        $display("  halted   = %b  (expected 0: HALT is unreachable past JAL loop)", halted);
+        dbg_read(7'h58, dbg_tmp);
+        $display("  PC (debug) = %0d", dbg_tmp);
+        $display("  halted     = %b  (expected 0: HALT unreachable past JAL loop)", halted);
 
         $display("");
         if (err_count == 0)
@@ -224,15 +258,15 @@ module tb_processor;
         else
             $display("%0d CHECK(S) FAILED", err_count);
 
-        repeat (2) @(negedge clk);
-        $stop;
+        repeat (2) @(negedge clkb);
+        $finish(0);
     end
 
-    // timeout
+    // Safety timeout
     initial begin
-        repeat (SIM_CYCLES) @(negedge clk);
+        repeat (SIM_CYCLES) @(negedge clkb);
         $display("[%0t] TB timeout after %0d cycles", $time, SIM_CYCLES);
-        $stop;
+        $finish(0);
     end
 
 endmodule

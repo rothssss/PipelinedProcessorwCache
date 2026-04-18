@@ -35,12 +35,16 @@ module instruction_mem (
     output wire [15:0] instruction_po,
     input  wire        imem_we_pi,
     input  wire [3:0]  imem_waddr_pi,
-    input  wire [15:0] imem_wdata_pi
+    input  wire [15:0] imem_wdata_pi,
+
+    input  wire [3:0]  dbg_addr_pi, // independent debug ports
+    output wire [15:0] dbg_data_po
 );
 
     reg [15:0] IMEM [0:15];
 
     assign instruction_po = IMEM[imem_addr_pi];
+    assign dbg_data_po    = IMEM[dbg_addr_pi];
 
     integer ii;
     initial begin

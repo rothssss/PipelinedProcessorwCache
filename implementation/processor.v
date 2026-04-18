@@ -8,7 +8,13 @@ module processor (
     input wire reset_pi,
     input  wire [15:0] if_instr_pi,
     output wire [3:0]  pc_fetch_po,
-    output wire        halted_po
+    output wire        halted_po,
+    // Debug tunnels to sub-modules
+    input  wire [2:0]  dbg_rf_addr_pi,
+    output wire [15:0] dbg_rf_data_po,
+    input  wire [5:0]  dbg_mem_addr_pi,
+    output wire [15:0] dbg_mem_data_po,
+    output wire [3:0]  dbg_pc_po
 );
 
     wire [15:0] if_instr = if_instr_pi;
@@ -88,7 +94,9 @@ module processor (
         .we_pi(rf_we),
         .wdata_pi(rf_wd),
         .rdata1_po(rf_r1),
-        .rdata2_po(rf_r2)
+        .rdata2_po(rf_r2),
+        .dbg_addr_pi(dbg_rf_addr_pi),
+        .dbg_data_po(dbg_rf_data_po)
     );
 
     function uses_rs;
@@ -141,7 +149,9 @@ module processor (
         .addr_pi(dmem_addr),
         .wdata_pi(dmem_wdata),
         .rdata_po(dmem_rdata),
-        .stall_po(dmem_stall)
+        .stall_po(dmem_stall),
+        .dbg_addr_pi(dbg_mem_addr_pi),
+        .dbg_data_po(dbg_mem_data_po)
     );
 
     assign dmem_req   = ex_mem_ldM | ex_mem_stM;
@@ -195,7 +205,8 @@ module processor (
     reg [3:0] pc_reg;
     reg [3:0] pc_out;
 
-    assign pc_fetch = pc_out;
+    assign pc_fetch  = pc_out;
+    assign dbg_pc_po = pc_out;
 
     // next_pc_sel: redirect on EX-stage control flow (branch/JAL/RET) else sequential word PC+1.
     wire [3:0] next_pc_sel = take_flow & ~stall_total ? flow_pc : (pc_reg + 4'd1);
