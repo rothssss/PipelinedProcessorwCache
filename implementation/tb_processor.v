@@ -18,8 +18,8 @@ module tb_processor;
     reg  [6:0]  dbg_addr;
     wire [15:0] dbg_data;
 
-    localparam SIM_CYCLES    = 400;
-    localparam EXEC_CHECK_AT = 100;
+    localparam SIM_CYCLES    = 600;
+    localparam EXEC_CHECK_AT = 200;
 
     // Non-overlapping two-phase clock: 20 ns period (50 MHz)
     //   t+0  : dead zone (both low)
@@ -130,23 +130,32 @@ module tb_processor;
         reset_pi = 1'b0;
         @(negedge clkb);
 
-        //        PC  Instruction                          Interpretation
-        load_word({`ADDI, 3'd1, 3'd0, 6'd5});        //  0  R1 = 5
-        load_word({`ADDI, 3'd2, 3'd0, 6'd3});        //  1  R2 = 3
-        load_word({`ADD,  3'd3, 3'd1, 3'd2, 3'b000});//  2  R3 = R1+R2 = 8
-        load_word({`ST,   3'd0, 3'd3, 6'd0});        //  3  MEM[0] = R3
-        load_word({`ADDI, 3'd4, 3'd0, 6'd0});        //  4  R4 = 0
-        load_word({`LD,   3'd5, 3'd4, 6'd0});        //  5  R5 = MEM[0] (expect 8)
-        load_word({`ADDI, 3'd1, 3'd1, 6'h3F});       //  6  R1 = R1-1 (loop body)
-        load_word({`BNEZ, 3'd1, 3'd0, 6'b111110});   //  7  if R1!=0 goto PC 6
-        load_word({`JAL,  3'd0, 9'b111111111});       //  8  JAL to self (infinite)
-        load_word({`NOP,  12'h000});                  //  9  (unreachable)
-        load_word({`HALT, 12'h000});                  // 10
-        load_word({`HALT, 12'h000});                  // 11
-        load_word({`HALT, 12'h000});                  // 12
-        load_word({`HALT, 12'h000});                  // 13
-        load_word({`HALT, 12'h000});                  // 14
-        load_word({`HALT, 12'h000});                  // 15
+        // Recursive sum(n) = n + sum(n-1), sum(0) = 0.
+        // N = 5, sp starts at 0, stride = 4 per stack frame so that recursion
+        // forces a cache eviction (line 0 tag=0 evicted by tag=1 at addr 16).
+        // Expected final R1 = 1+2+3+4+5 = 15.
+        //
+        // Register usage: R0=zero, R1=n/result, R2=sp, R3=temp, R7=return address.
+        //
+        //        PC  Instruction                              Meaning
+        load_word({`ADDI, 3'd1, 3'd0, 6'd5});             //  0  R1 = n = 5
+        load_word({`ADDI, 3'd2, 3'd0, 6'd0});             //  1  R2 = sp = 0
+        load_word({`JAL,  3'd7, 9'd1});                   //  2  R7=3; call sum (PC<=4)
+        load_word({`JAL,  3'd0, 9'b111111111});           //  3  self-loop (result in R1)
+        // sum:
+        load_word({`BNEZ, 3'd1, 3'd0, 6'd1});             //  4  if n!=0 goto recurse
+        load_word({`RET,  3'd0, 3'd7, 6'd0});             //  5  base: n==0, R1=0, return
+        // recurse:
+        load_word({`ST,   3'd2, 3'd1, 6'd0});             //  6  MEM[sp+0] = n
+        load_word({`ST,   3'd2, 3'd7, 6'd1});             //  7  MEM[sp+1] = ra
+        load_word({`ADDI, 3'd2, 3'd2, 6'd4});             //  8  sp += 4
+        load_word({`ADDI, 3'd1, 3'd1, 6'h3F});            //  9  n  -= 1
+        load_word({`JAL,  3'd7, 9'b111111001});           // 10  R7=11; recursive call (-7)
+        load_word({`ADDI, 3'd2, 3'd2, 6'b111100});        // 11  sp -= 4
+        load_word({`LD,   3'd3, 3'd2, 6'd0});             // 12  R3 = saved n
+        load_word({`LD,   3'd7, 3'd2, 6'd1});             // 13  R7 = saved ra
+        load_word({`ADD,  3'd1, 3'd1, 3'd3, 3'b000});     // 14  R1 = subsum + n
+        load_word({`RET,  3'd0, 3'd7, 6'd0});             // 15  return
 
         instr_valid = 1'b0;
         load_done   = 1'b1;
@@ -157,23 +166,21 @@ module tb_processor;
         $display("");
         $display("===== IMEM Verification (via debug port) =====");
         dbg_read(7'h10, dbg_tmp); check16("IMEM[00]", dbg_tmp, {`ADDI, 3'd1, 3'd0, 6'd5});
-        dbg_read(7'h11, dbg_tmp); check16("IMEM[01]", dbg_tmp, {`ADDI, 3'd2, 3'd0, 6'd3});
-        dbg_read(7'h12, dbg_tmp); check16("IMEM[02]", dbg_tmp, {`ADD,  3'd3, 3'd1, 3'd2, 3'b000});
-        dbg_read(7'h13, dbg_tmp); check16("IMEM[03]", dbg_tmp, {`ST,   3'd0, 3'd3, 6'd0});
-        dbg_read(7'h14, dbg_tmp); check16("IMEM[04]", dbg_tmp, {`ADDI, 3'd4, 3'd0, 6'd0});
-        dbg_read(7'h15, dbg_tmp); check16("IMEM[05]", dbg_tmp, {`LD,   3'd5, 3'd4, 6'd0});
-        dbg_read(7'h16, dbg_tmp); check16("IMEM[06]", dbg_tmp, {`ADDI, 3'd1, 3'd1, 6'h3F});
-        dbg_read(7'h17, dbg_tmp); check16("IMEM[07]", dbg_tmp, {`BNEZ, 3'd1, 3'd0, 6'b111110});
-        dbg_read(7'h18, dbg_tmp); check16("IMEM[08]", dbg_tmp, {`JAL,  3'd0, 9'b111111111});
-        dbg_read(7'h19, dbg_tmp); check16("IMEM[09]", dbg_tmp, {`NOP,  12'h000});
-        for (i = 10; i < 16; i = i + 1) begin
-            dbg_read(7'h10 + i[6:0], dbg_tmp);
-            if (dbg_tmp !== {`HALT, 12'h000}) begin
-                $display("  FAIL IMEM[%02d] : got 0x%04h, expected HALT", i, dbg_tmp);
-                err_count = err_count + 1;
-            end else
-                $display("  OK   IMEM[%02d] = HALT", i);
-        end
+        dbg_read(7'h11, dbg_tmp); check16("IMEM[01]", dbg_tmp, {`ADDI, 3'd2, 3'd0, 6'd0});
+        dbg_read(7'h12, dbg_tmp); check16("IMEM[02]", dbg_tmp, {`JAL,  3'd7, 9'd1});
+        dbg_read(7'h13, dbg_tmp); check16("IMEM[03]", dbg_tmp, {`JAL,  3'd0, 9'b111111111});
+        dbg_read(7'h14, dbg_tmp); check16("IMEM[04]", dbg_tmp, {`BNEZ, 3'd1, 3'd0, 6'd1});
+        dbg_read(7'h15, dbg_tmp); check16("IMEM[05]", dbg_tmp, {`RET,  3'd0, 3'd7, 6'd0});
+        dbg_read(7'h16, dbg_tmp); check16("IMEM[06]", dbg_tmp, {`ST,   3'd2, 3'd1, 6'd0});
+        dbg_read(7'h17, dbg_tmp); check16("IMEM[07]", dbg_tmp, {`ST,   3'd2, 3'd7, 6'd1});
+        dbg_read(7'h18, dbg_tmp); check16("IMEM[08]", dbg_tmp, {`ADDI, 3'd2, 3'd2, 6'd4});
+        dbg_read(7'h19, dbg_tmp); check16("IMEM[09]", dbg_tmp, {`ADDI, 3'd1, 3'd1, 6'h3F});
+        dbg_read(7'h1A, dbg_tmp); check16("IMEM[10]", dbg_tmp, {`JAL,  3'd7, 9'b111111001});
+        dbg_read(7'h1B, dbg_tmp); check16("IMEM[11]", dbg_tmp, {`ADDI, 3'd2, 3'd2, 6'b111100});
+        dbg_read(7'h1C, dbg_tmp); check16("IMEM[12]", dbg_tmp, {`LD,   3'd3, 3'd2, 6'd0});
+        dbg_read(7'h1D, dbg_tmp); check16("IMEM[13]", dbg_tmp, {`LD,   3'd7, 3'd2, 6'd1});
+        dbg_read(7'h1E, dbg_tmp); check16("IMEM[14]", dbg_tmp, {`ADD,  3'd1, 3'd1, 3'd3, 3'b000});
+        dbg_read(7'h1F, dbg_tmp); check16("IMEM[15]", dbg_tmp, {`RET,  3'd0, 3'd7, 6'd0});
 
         $display("");
         $display("[%0t] Program loaded, execution begins", $time);
@@ -219,38 +226,76 @@ module tb_processor;
             $display("  R%0d = %6d  (0x%04h)", i, $signed(dbg_tmp), dbg_tmp);
         end
 
+        // Expected final state after sum(5) returns and PC settles on self-loop at PC 3:
+        //   R1 = 15 (the result), R2 = 0 (sp restored), R3 = 5 (last LD value),
+        //   R7 = 3 (main's return address, restored from cache during final unwind),
+        //   R0/R4/R5/R6 = 0 (never written).
         $display("--- Register Checks ---");
         dbg_read(7'h00, dbg_tmp); check16("R0", dbg_tmp, 16'd0);
-        dbg_read(7'h01, dbg_tmp); check16("R1", dbg_tmp, 16'd0);
-        dbg_read(7'h02, dbg_tmp); check16("R2", dbg_tmp, 16'd3);
-        dbg_read(7'h03, dbg_tmp); check16("R3", dbg_tmp, 16'd8);
-        dbg_read(7'h04, dbg_tmp); check16("R4", dbg_tmp, 16'd0);
-        dbg_read(7'h05, dbg_tmp); check16("R5", dbg_tmp, 16'd8);
-        dbg_read(7'h06, dbg_tmp); check16("R6", dbg_tmp, 16'd0);
-        dbg_read(7'h07, dbg_tmp); check16("R7", dbg_tmp, 16'd0);
+        dbg_read(7'h01, dbg_tmp); check16("R1 (sum)", dbg_tmp, 16'd15);
+        dbg_read(7'h02, dbg_tmp); check16("R2 (sp)",  dbg_tmp, 16'd0);
+        dbg_read(7'h03, dbg_tmp); check16("R3",        dbg_tmp, 16'd5);
+        dbg_read(7'h04, dbg_tmp); check16("R4",        dbg_tmp, 16'd0);
+        dbg_read(7'h05, dbg_tmp); check16("R5",        dbg_tmp, 16'd0);
+        dbg_read(7'h06, dbg_tmp); check16("R6",        dbg_tmp, 16'd0);
+        dbg_read(7'h07, dbg_tmp); check16("R7 (ra)",   dbg_tmp, 16'd3);
 
-        // Data cache: ST wrote 8 to address 0.
-        // addr 0 -> cache index 0, word offset 0, tag 0.
-        // Cache data line 0 word 0 is at debug address 0x40.
+        // Cache state after execution:
+        //   Line 0: tag=0, valid=1, dirty=0 -- reinstalled clean during final LD [0] miss
+        //           data = [5, 3, 0, 0]   (the first stack frame's n and ra)
+        //   Line 1: tag=0, valid=1, dirty=1 -- holds frame for sum(4): [4, 11, 0, 0]
+        //   Line 2: tag=0, valid=1, dirty=1 -- holds frame for sum(3): [3, 11, 0, 0]
+        //   Line 3: tag=0, valid=1, dirty=1 -- holds frame for sum(2): [2, 11, 0, 0]
         $display("--- Data Cache (via debug port) ---");
-        dbg_read(7'h40, dbg_tmp); check16("cache[0] word0", dbg_tmp, 16'd8);
+        dbg_read(7'h40, dbg_tmp); check16("cache[0] w0 (n=5)",  dbg_tmp, 16'd5);
+        dbg_read(7'h41, dbg_tmp); check16("cache[0] w1 (ra=3)", dbg_tmp, 16'd3);
+        dbg_read(7'h44, dbg_tmp); check16("cache[1] w0 (n=4)",  dbg_tmp, 16'd4);
+        dbg_read(7'h45, dbg_tmp); check16("cache[1] w1 (ra=11)",dbg_tmp, 16'd11);
+        dbg_read(7'h48, dbg_tmp); check16("cache[2] w0 (n=3)",  dbg_tmp, 16'd3);
+        dbg_read(7'h49, dbg_tmp); check16("cache[2] w1 (ra=11)",dbg_tmp, 16'd11);
+        dbg_read(7'h4C, dbg_tmp); check16("cache[3] w0 (n=2)",  dbg_tmp, 16'd2);
+        dbg_read(7'h4D, dbg_tmp); check16("cache[3] w1 (ra=11)",dbg_tmp, 16'd11);
 
-        // Cache metadata line 0 at debug address 0x50: expect valid=1, dirty=1, tag=0
+        $display("--- Cache Metadata (via debug port) ---");
         dbg_read(7'h50, dbg_tmp);
         $display("  META[0] = 0x%04h  (valid=%b dirty=%b tag=%b)",
                  dbg_tmp, dbg_tmp[2], dbg_tmp[1], dbg_tmp[0]);
-        check16("META[0]", dbg_tmp, {13'b0, 1'b1, 1'b1, 1'b0});
+        check16("META[0]", dbg_tmp, {13'b0, 1'b1, 1'b0, 1'b0});
+        dbg_read(7'h51, dbg_tmp);
+        $display("  META[1] = 0x%04h  (valid=%b dirty=%b tag=%b)",
+                 dbg_tmp, dbg_tmp[2], dbg_tmp[1], dbg_tmp[0]);
+        check16("META[1]", dbg_tmp, {13'b0, 1'b1, 1'b1, 1'b0});
+        dbg_read(7'h52, dbg_tmp);
+        $display("  META[2] = 0x%04h  (valid=%b dirty=%b tag=%b)",
+                 dbg_tmp, dbg_tmp[2], dbg_tmp[1], dbg_tmp[0]);
+        check16("META[2]", dbg_tmp, {13'b0, 1'b1, 1'b1, 1'b0});
+        dbg_read(7'h53, dbg_tmp);
+        $display("  META[3] = 0x%04h  (valid=%b dirty=%b tag=%b)",
+                 dbg_tmp, dbg_tmp[2], dbg_tmp[1], dbg_tmp[0]);
+        check16("META[3]", dbg_tmp, {13'b0, 1'b1, 1'b1, 1'b0});
 
-        // DMEM[0] via debug address 0x20: should still be 0 because cache is dirty
-        // (write-back has not flushed yet)
-        dbg_read(7'h20, dbg_tmp);
-        $display("  DMEM[0] = %0d (0x%04h) (backing store, not yet written back)", $signed(dbg_tmp), dbg_tmp);
+        // DMEM backing store: two dirty writebacks occurred on line 0.
+        //   First eviction (sum(1) ST [16]) wrote old tag=0 line back to DMEM[0..3].
+        //   Second eviction (sum(5) LD [0]) wrote tag=1 line back to DMEM[16..19].
+        $display("--- DMEM Backing Store (via debug port) ---");
+        dbg_read(7'h20, dbg_tmp); check16("DMEM[0]  (sum5 n)",  dbg_tmp, 16'd5);
+        dbg_read(7'h21, dbg_tmp); check16("DMEM[1]  (sum5 ra)", dbg_tmp, 16'd3);
+        dbg_read(7'h22, dbg_tmp); check16("DMEM[2]",            dbg_tmp, 16'd0);
+        dbg_read(7'h23, dbg_tmp); check16("DMEM[3]",            dbg_tmp, 16'd0);
+        dbg_read(7'h30, dbg_tmp); check16("DMEM[16] (sum1 n)",  dbg_tmp, 16'd1);
+        dbg_read(7'h31, dbg_tmp); check16("DMEM[17] (sum1 ra)", dbg_tmp, 16'd11);
+        // DMEM[4..15] should still be 0 because those cache lines are still dirty
+        // in cache and never been evicted/written back.
+        dbg_read(7'h24, dbg_tmp); check16("DMEM[4]  (still 0)", dbg_tmp, 16'd0);
+        dbg_read(7'h28, dbg_tmp); check16("DMEM[8]  (still 0)", dbg_tmp, 16'd0);
+        dbg_read(7'h2C, dbg_tmp); check16("DMEM[12] (still 0)", dbg_tmp, 16'd0);
 
-        // PC via debug address 0x58
+        // PC via debug address 0x58. After RET from sum, PC settles on the JAL self-loop at PC=3.
         $display("--- Pipeline ---");
         dbg_read(7'h58, dbg_tmp);
         $display("  PC (debug) = %0d", dbg_tmp);
-        $display("  halted     = %b  (expected 0: HALT unreachable past JAL loop)", halted);
+        check16("PC", dbg_tmp, 16'd3);
+        $display("  halted     = %b  (expected 0: HALT never decoded)", halted);
 
         $display("");
         if (err_count == 0)
