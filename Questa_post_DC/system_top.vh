@@ -1,7 +1,7 @@
 /////////////////////////////////////////////////////////////
 // Created by: Synopsys DC Expert(TM) in wire load mode
 // Version   : U-2022.12-SP7
-// Date      : Sat Apr 18 17:19:16 2026
+// Date      : Sun Apr 19 02:08:11 2026
 /////////////////////////////////////////////////////////////
 
 
@@ -2104,9 +2104,9 @@ module system_top ( clka, clkb, reset_pi, instr_data_pi, instr_valid_pi,
   wire   [0:3] \proc/dmem/TAG_ARRAY ;
   wire   [0:3] \proc/dmem/DIRTY_ARRAY ;
   wire   [0:3] \proc/dmem/VALID_ARRAY ;
-  wire   [15:1] \proc/aluu/add_15/carry ;
-  wire   [15:1] \proc/aluu/add_21/carry ;
-  wire   [4:2] \proc/add_228/carry ;
+  wire   [15:1] \proc/aluu/add_17/carry ;
+  wire   [15:1] \proc/aluu/add_23/carry ;
+  wire   [4:2] \proc/add_232/carry ;
 
   DFFNEGX1 state_reg ( .D(n82), .CLK(clkb), .Q(state) );
   DFFNEGX1 \wr_addr_reg[0]  ( .D(n81), .CLK(clkb), .Q(wr_addr[0]) );
@@ -13850,99 +13850,99 @@ module system_top ( clka, clkb, reset_pi, instr_data_pi, instr_valid_pi,
   AOI21X1 \proc/aluu/U26  ( .A(\proc/aluu/N122 ), .B(n206), .C(\proc/aluu/n28 ), .Y(\proc/aluu/n26 ) );
   NAND3X1 \proc/aluu/U25  ( .A(\proc/aluu/n24 ), .B(\proc/aluu/n25 ), .C(
         \proc/aluu/n26 ), .Y(\proc/alu_res_raw [9]) );
-  FAX1 \proc/aluu/add_15/U1_1  ( .A(\proc/op1_fw [1]), .B(\proc/op2_alu [1]), 
-        .C(n102), .YC(\proc/aluu/add_15/carry [2]), .YS(\proc/aluu/N50 ) );
-  FAX1 \proc/aluu/add_15/U1_2  ( .A(n300), .B(\proc/op2_alu [2]), .C(
-        \proc/aluu/add_15/carry [2]), .YC(\proc/aluu/add_15/carry [3]), .YS(
+  FAX1 \proc/aluu/add_17/U1_1  ( .A(\proc/op1_fw [1]), .B(\proc/op2_alu [1]), 
+        .C(n102), .YC(\proc/aluu/add_17/carry [2]), .YS(\proc/aluu/N50 ) );
+  FAX1 \proc/aluu/add_17/U1_2  ( .A(n300), .B(\proc/op2_alu [2]), .C(
+        \proc/aluu/add_17/carry [2]), .YC(\proc/aluu/add_17/carry [3]), .YS(
         \proc/aluu/N51 ) );
-  FAX1 \proc/aluu/add_15/U1_3  ( .A(n298), .B(\proc/op2_alu [3]), .C(
-        \proc/aluu/add_15/carry [3]), .YC(\proc/aluu/add_15/carry [4]), .YS(
+  FAX1 \proc/aluu/add_17/U1_3  ( .A(n298), .B(\proc/op2_alu [3]), .C(
+        \proc/aluu/add_17/carry [3]), .YC(\proc/aluu/add_17/carry [4]), .YS(
         \proc/aluu/N52 ) );
-  FAX1 \proc/aluu/add_15/U1_4  ( .A(n283), .B(\proc/op2_alu [4]), .C(
-        \proc/aluu/add_15/carry [4]), .YC(\proc/aluu/add_15/carry [5]), .YS(
+  FAX1 \proc/aluu/add_17/U1_4  ( .A(n283), .B(\proc/op2_alu [4]), .C(
+        \proc/aluu/add_17/carry [4]), .YC(\proc/aluu/add_17/carry [5]), .YS(
         \proc/aluu/N53 ) );
-  FAX1 \proc/aluu/add_15/U1_5  ( .A(n281), .B(\proc/op2_alu [5]), .C(
-        \proc/aluu/add_15/carry [5]), .YC(\proc/aluu/add_15/carry [6]), .YS(
+  FAX1 \proc/aluu/add_17/U1_5  ( .A(n281), .B(\proc/op2_alu [5]), .C(
+        \proc/aluu/add_17/carry [5]), .YC(\proc/aluu/add_17/carry [6]), .YS(
         \proc/aluu/N54 ) );
-  FAX1 \proc/aluu/add_15/U1_6  ( .A(n279), .B(\proc/op2_alu [6]), .C(
-        \proc/aluu/add_15/carry [6]), .YC(\proc/aluu/add_15/carry [7]), .YS(
+  FAX1 \proc/aluu/add_17/U1_6  ( .A(n279), .B(\proc/op2_alu [6]), .C(
+        \proc/aluu/add_17/carry [6]), .YC(\proc/aluu/add_17/carry [7]), .YS(
         \proc/aluu/N55 ) );
-  FAX1 \proc/aluu/add_15/U1_7  ( .A(n277), .B(\proc/op2_alu [7]), .C(
-        \proc/aluu/add_15/carry [7]), .YC(\proc/aluu/add_15/carry [8]), .YS(
+  FAX1 \proc/aluu/add_17/U1_7  ( .A(n277), .B(\proc/op2_alu [7]), .C(
+        \proc/aluu/add_17/carry [7]), .YC(\proc/aluu/add_17/carry [8]), .YS(
         \proc/aluu/N56 ) );
-  FAX1 \proc/aluu/add_15/U1_8  ( .A(n275), .B(\proc/op2_alu [8]), .C(
-        \proc/aluu/add_15/carry [8]), .YC(\proc/aluu/add_15/carry [9]), .YS(
+  FAX1 \proc/aluu/add_17/U1_8  ( .A(n275), .B(\proc/op2_alu [8]), .C(
+        \proc/aluu/add_17/carry [8]), .YC(\proc/aluu/add_17/carry [9]), .YS(
         \proc/aluu/N57 ) );
-  FAX1 \proc/aluu/add_15/U1_9  ( .A(n273), .B(\proc/op2_alu [9]), .C(
-        \proc/aluu/add_15/carry [9]), .YC(\proc/aluu/add_15/carry [10]), .YS(
+  FAX1 \proc/aluu/add_17/U1_9  ( .A(n273), .B(\proc/op2_alu [9]), .C(
+        \proc/aluu/add_17/carry [9]), .YC(\proc/aluu/add_17/carry [10]), .YS(
         \proc/aluu/N58 ) );
-  FAX1 \proc/aluu/add_15/U1_10  ( .A(n295), .B(\proc/op2_alu [10]), .C(
-        \proc/aluu/add_15/carry [10]), .YC(\proc/aluu/add_15/carry [11]), .YS(
+  FAX1 \proc/aluu/add_17/U1_10  ( .A(n295), .B(\proc/op2_alu [10]), .C(
+        \proc/aluu/add_17/carry [10]), .YC(\proc/aluu/add_17/carry [11]), .YS(
         \proc/aluu/N59 ) );
-  FAX1 \proc/aluu/add_15/U1_11  ( .A(n293), .B(\proc/op2_alu [11]), .C(
-        \proc/aluu/add_15/carry [11]), .YC(\proc/aluu/add_15/carry [12]), .YS(
+  FAX1 \proc/aluu/add_17/U1_11  ( .A(n293), .B(\proc/op2_alu [11]), .C(
+        \proc/aluu/add_17/carry [11]), .YC(\proc/aluu/add_17/carry [12]), .YS(
         \proc/aluu/N60 ) );
-  FAX1 \proc/aluu/add_15/U1_12  ( .A(n291), .B(\proc/op2_alu [12]), .C(
-        \proc/aluu/add_15/carry [12]), .YC(\proc/aluu/add_15/carry [13]), .YS(
+  FAX1 \proc/aluu/add_17/U1_12  ( .A(n291), .B(\proc/op2_alu [12]), .C(
+        \proc/aluu/add_17/carry [12]), .YC(\proc/aluu/add_17/carry [13]), .YS(
         \proc/aluu/N61 ) );
-  FAX1 \proc/aluu/add_15/U1_13  ( .A(n289), .B(\proc/op2_alu [13]), .C(
-        \proc/aluu/add_15/carry [13]), .YC(\proc/aluu/add_15/carry [14]), .YS(
+  FAX1 \proc/aluu/add_17/U1_13  ( .A(n289), .B(\proc/op2_alu [13]), .C(
+        \proc/aluu/add_17/carry [13]), .YC(\proc/aluu/add_17/carry [14]), .YS(
         \proc/aluu/N62 ) );
-  FAX1 \proc/aluu/add_15/U1_14  ( .A(n287), .B(\proc/op2_alu [14]), .C(
-        \proc/aluu/add_15/carry [14]), .YC(\proc/aluu/add_15/carry [15]), .YS(
+  FAX1 \proc/aluu/add_17/U1_14  ( .A(n287), .B(\proc/op2_alu [14]), .C(
+        \proc/aluu/add_17/carry [14]), .YC(\proc/aluu/add_17/carry [15]), .YS(
         \proc/aluu/N63 ) );
-  FAX1 \proc/aluu/add_15/U1_15  ( .A(n285), .B(\proc/op2_alu [15]), .C(
-        \proc/aluu/add_15/carry [15]), .YC(), .YS(\proc/aluu/N64 ) );
-  FAX1 \proc/aluu/add_21/U1_1  ( .A(n302), .B(n688), .C(n103), .YC(
-        \proc/aluu/add_21/carry [2]), .YS(\proc/aluu/N114 ) );
-  FAX1 \proc/aluu/add_21/U1_2  ( .A(n300), .B(\proc/id_ex_offM [2]), .C(
-        \proc/aluu/add_21/carry [2]), .YC(\proc/aluu/add_21/carry [3]), .YS(
+  FAX1 \proc/aluu/add_17/U1_15  ( .A(n285), .B(\proc/op2_alu [15]), .C(
+        \proc/aluu/add_17/carry [15]), .YC(), .YS(\proc/aluu/N64 ) );
+  FAX1 \proc/aluu/add_23/U1_1  ( .A(n302), .B(n688), .C(n103), .YC(
+        \proc/aluu/add_23/carry [2]), .YS(\proc/aluu/N114 ) );
+  FAX1 \proc/aluu/add_23/U1_2  ( .A(n300), .B(\proc/id_ex_offM [2]), .C(
+        \proc/aluu/add_23/carry [2]), .YC(\proc/aluu/add_23/carry [3]), .YS(
         \proc/aluu/N115 ) );
-  FAX1 \proc/aluu/add_21/U1_3  ( .A(n298), .B(\proc/id_ex_offM [3]), .C(
-        \proc/aluu/add_21/carry [3]), .YC(\proc/aluu/add_21/carry [4]), .YS(
+  FAX1 \proc/aluu/add_23/U1_3  ( .A(n298), .B(\proc/id_ex_offM [3]), .C(
+        \proc/aluu/add_23/carry [3]), .YC(\proc/aluu/add_23/carry [4]), .YS(
         \proc/aluu/N116 ) );
-  FAX1 \proc/aluu/add_21/U1_4  ( .A(n283), .B(\proc/id_ex_offM [4]), .C(
-        \proc/aluu/add_21/carry [4]), .YC(\proc/aluu/add_21/carry [5]), .YS(
+  FAX1 \proc/aluu/add_23/U1_4  ( .A(n283), .B(\proc/id_ex_offM [4]), .C(
+        \proc/aluu/add_23/carry [4]), .YC(\proc/aluu/add_23/carry [5]), .YS(
         \proc/aluu/N117 ) );
-  FAX1 \proc/aluu/add_21/U1_5  ( .A(n281), .B(\proc/id_ex_offM [5]), .C(
-        \proc/aluu/add_21/carry [5]), .YC(\proc/aluu/add_21/carry [6]), .YS(
+  FAX1 \proc/aluu/add_23/U1_5  ( .A(n281), .B(\proc/id_ex_offM [5]), .C(
+        \proc/aluu/add_23/carry [5]), .YC(\proc/aluu/add_23/carry [6]), .YS(
         \proc/aluu/N118 ) );
-  FAX1 \proc/aluu/add_21/U1_6  ( .A(n279), .B(\proc/id_ex_offM [6]), .C(
-        \proc/aluu/add_21/carry [6]), .YC(\proc/aluu/add_21/carry [7]), .YS(
+  FAX1 \proc/aluu/add_23/U1_6  ( .A(n279), .B(\proc/id_ex_offM [6]), .C(
+        \proc/aluu/add_23/carry [6]), .YC(\proc/aluu/add_23/carry [7]), .YS(
         \proc/aluu/N119 ) );
-  FAX1 \proc/aluu/add_21/U1_7  ( .A(n277), .B(\proc/id_ex_offM [7]), .C(
-        \proc/aluu/add_21/carry [7]), .YC(\proc/aluu/add_21/carry [8]), .YS(
+  FAX1 \proc/aluu/add_23/U1_7  ( .A(n277), .B(\proc/id_ex_offM [7]), .C(
+        \proc/aluu/add_23/carry [7]), .YC(\proc/aluu/add_23/carry [8]), .YS(
         \proc/aluu/N120 ) );
-  FAX1 \proc/aluu/add_21/U1_8  ( .A(n275), .B(\proc/id_ex_offM [8]), .C(
-        \proc/aluu/add_21/carry [8]), .YC(\proc/aluu/add_21/carry [9]), .YS(
+  FAX1 \proc/aluu/add_23/U1_8  ( .A(n275), .B(\proc/id_ex_offM [8]), .C(
+        \proc/aluu/add_23/carry [8]), .YC(\proc/aluu/add_23/carry [9]), .YS(
         \proc/aluu/N121 ) );
-  FAX1 \proc/aluu/add_21/U1_9  ( .A(n273), .B(\proc/id_ex_offM [9]), .C(
-        \proc/aluu/add_21/carry [9]), .YC(\proc/aluu/add_21/carry [10]), .YS(
+  FAX1 \proc/aluu/add_23/U1_9  ( .A(n273), .B(\proc/id_ex_offM [9]), .C(
+        \proc/aluu/add_23/carry [9]), .YC(\proc/aluu/add_23/carry [10]), .YS(
         \proc/aluu/N122 ) );
-  FAX1 \proc/aluu/add_21/U1_10  ( .A(n295), .B(\proc/id_ex_offM [10]), .C(
-        \proc/aluu/add_21/carry [10]), .YC(\proc/aluu/add_21/carry [11]), .YS(
+  FAX1 \proc/aluu/add_23/U1_10  ( .A(n295), .B(\proc/id_ex_offM [10]), .C(
+        \proc/aluu/add_23/carry [10]), .YC(\proc/aluu/add_23/carry [11]), .YS(
         \proc/aluu/N123 ) );
-  FAX1 \proc/aluu/add_21/U1_11  ( .A(n293), .B(\proc/id_ex_offM [11]), .C(
-        \proc/aluu/add_21/carry [11]), .YC(\proc/aluu/add_21/carry [12]), .YS(
+  FAX1 \proc/aluu/add_23/U1_11  ( .A(n293), .B(\proc/id_ex_offM [11]), .C(
+        \proc/aluu/add_23/carry [11]), .YC(\proc/aluu/add_23/carry [12]), .YS(
         \proc/aluu/N124 ) );
-  FAX1 \proc/aluu/add_21/U1_12  ( .A(n291), .B(\proc/id_ex_offM [12]), .C(
-        \proc/aluu/add_21/carry [12]), .YC(\proc/aluu/add_21/carry [13]), .YS(
+  FAX1 \proc/aluu/add_23/U1_12  ( .A(n291), .B(\proc/id_ex_offM [12]), .C(
+        \proc/aluu/add_23/carry [12]), .YC(\proc/aluu/add_23/carry [13]), .YS(
         \proc/aluu/N125 ) );
-  FAX1 \proc/aluu/add_21/U1_13  ( .A(n289), .B(\proc/id_ex_offM [13]), .C(
-        \proc/aluu/add_21/carry [13]), .YC(\proc/aluu/add_21/carry [14]), .YS(
+  FAX1 \proc/aluu/add_23/U1_13  ( .A(n289), .B(\proc/id_ex_offM [13]), .C(
+        \proc/aluu/add_23/carry [13]), .YC(\proc/aluu/add_23/carry [14]), .YS(
         \proc/aluu/N126 ) );
-  FAX1 \proc/aluu/add_21/U1_14  ( .A(n287), .B(\proc/id_ex_offM [14]), .C(
-        \proc/aluu/add_21/carry [14]), .YC(\proc/aluu/add_21/carry [15]), .YS(
+  FAX1 \proc/aluu/add_23/U1_14  ( .A(n287), .B(\proc/id_ex_offM [14]), .C(
+        \proc/aluu/add_23/carry [14]), .YC(\proc/aluu/add_23/carry [15]), .YS(
         \proc/aluu/N127 ) );
-  FAX1 \proc/aluu/add_21/U1_15  ( .A(n285), .B(\proc/id_ex_offM [15]), .C(
-        \proc/aluu/add_21/carry [15]), .YC(), .YS(\proc/aluu/N128 ) );
-  HAX1 \proc/add_228/U1_1_1  ( .A(\proc/pc_ext [1]), .B(\proc/pc_ext [0]), 
-        .YC(\proc/add_228/carry [2]), .YS(\proc/jal_link [1]) );
-  HAX1 \proc/add_228/U1_1_2  ( .A(\proc/pc_ext [2]), .B(
-        \proc/add_228/carry [2]), .YC(\proc/add_228/carry [3]), .YS(
+  FAX1 \proc/aluu/add_23/U1_15  ( .A(n285), .B(\proc/id_ex_offM [15]), .C(
+        \proc/aluu/add_23/carry [15]), .YC(), .YS(\proc/aluu/N128 ) );
+  HAX1 \proc/add_232/U1_1_1  ( .A(\proc/pc_ext [1]), .B(\proc/pc_ext [0]), 
+        .YC(\proc/add_232/carry [2]), .YS(\proc/jal_link [1]) );
+  HAX1 \proc/add_232/U1_1_2  ( .A(\proc/pc_ext [2]), .B(
+        \proc/add_232/carry [2]), .YC(\proc/add_232/carry [3]), .YS(
         \proc/jal_link [2]) );
-  HAX1 \proc/add_228/U1_1_3  ( .A(\proc/pc_ext [3]), .B(
-        \proc/add_228/carry [3]), .YC(\proc/jal_link [4]), .YS(
+  HAX1 \proc/add_232/U1_1_3  ( .A(\proc/pc_ext [3]), .B(
+        \proc/add_232/carry [3]), .YC(\proc/jal_link [4]), .YS(
         \proc/jal_link [3]) );
   AND2X2 U104 ( .A(\proc/rf/n264 ), .B(n1336), .Y(n83) );
   AND2X2 U105 ( .A(\proc/rf/n266 ), .B(\proc/din_rt [0]), .Y(n84) );

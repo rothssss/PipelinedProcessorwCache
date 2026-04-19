@@ -1,3 +1,5 @@
+`include "defines.vh"
+
 // branchCond_po: |op1_pi (BNEZ tests rs != 0 using forwarded op1).
 
 module alu (

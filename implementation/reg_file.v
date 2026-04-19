@@ -10,7 +10,7 @@ module reg_file (
     input wire [15:0] wdata_pi,
     output wire [15:0] rdata1_po,
     output wire [15:0] rdata2_po,
-    // Debug read port (active regardless of processor state)
+    // independent debug ports
     input  wire [2:0]  dbg_addr_pi,
     output wire [15:0] dbg_data_po
 );
@@ -28,6 +28,7 @@ module reg_file (
 
     assign dbg_data_po = regs[dbg_addr_pi];
 
+    // Sync reset on negedge clkb.
     always @(negedge clkb) begin
         if (reset_pi) begin
             for (i = 0; i < 8; i = i + 1)

@@ -1,3 +1,5 @@
+`include "defines.vh"
+
 // clka PC seq, clkb pipeline and regfile write and DMEM 
 // Branch / JAL / RET resolved in EX. next_pc MUX: EX targets +1 sequential when no redirect.
 // if_instr_pi: fetched instruction word from external IMEM. pc_fetch_po: current PC for IMEM read.
@@ -9,7 +11,7 @@ module processor (
     input  wire [15:0] if_instr_pi,
     output wire [3:0]  pc_fetch_po,
     output wire        halted_po,
-    // Debug tunnels to sub-modules
+    // independent debug ports
     input  wire [2:0]  dbg_rf_addr_pi,
     output wire [15:0] dbg_rf_data_po,
     input  wire [5:0]  dbg_mem_addr_pi,
@@ -206,11 +208,13 @@ module processor (
     reg [3:0] pc_out;
 
     assign pc_fetch  = pc_out;
-    assign dbg_pc_po = pc_out;
+    assign dbg_pc_po = pc_out; // for showing pc value. 
 
     // next_pc_sel: redirect on EX-stage control flow (branch/JAL/RET) else sequential word PC+1.
     wire [3:0] next_pc_sel = take_flow & ~stall_total ? flow_pc : (pc_reg + 4'd1);
 
+    // Sync reset: reset_pi is sampled on the active clock edge.
+    // Caller must hold reset_pi high for >=1 full period of the relevant clock.
     always @(negedge clka) begin
         if (reset_pi)
             pc_reg <= 4'b0;

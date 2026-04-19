@@ -14,6 +14,12 @@
 
 set my_verilog_files [list instruction_mem.v alu.v data_mem_cached.v decode.v processor.v reg_file.v system_top.v]
 
+#/* Header files (.vh) with `include "..." directives.  They are NOT listed  */
+#/* in my_verilog_files because `analyze` would treat them as standalone     */
+#/* compilation units.  Instead we put their directory on search_path below  */
+#/* so that the `include directives inside the .v files resolve correctly.   */
+set my_include_dirs [list "."]
+
 #/* Top-level Module Name update                             */
 set my_toplevel system_top
 
@@ -61,6 +67,10 @@ set target_library "osu05_stdcells.db"
 
 define_design_lib WORK -path ./WORK
 set verilogout_show_unconnected_pins "true"
+
+# Make the header file(s) locatable by `include directives inside the sources.
+# Prepending user-supplied dirs keeps any tool defaults intact.
+set search_path [concat $my_include_dirs $search_path]
 
 analyze -f verilog $my_verilog_files
 
