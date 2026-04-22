@@ -1,0 +1,259 @@
+m255
+K4
+z2
+Z0 !s12c _opt
+Z1 !s99 nomlopt
+!s12c _opt1
+R1
+R0
+R1
+!s11f vlog 2023.2 2023.04, Apr 11 2023
+13
+!s112 1.1
+!i10d 8192
+!i10e 25
+!i10f 100
+cModel Technology
+Z2 d/storage-home/l/lr60/ELEC422/final/codebase/PipelinedProcessorwCache/implementation
+T_opt
+!s110 1776827428
+VLAGR>a5R43jzFDDA6[ncl0
+04 12 4 work tb_processor fast 0
+=1-000ae431a4f1-69e83c24-18505-1adb36
+R1
+Z3 !s12b OEM100
+Z4 !s124 OEM100
+Z5 o-quiet -auto_acc_if_foreign -work work -debugdb +acc
+Z6 tCvgOpt 0
+n@_opt
+Z7 OL;O;2023.2;77
+T_opt1
+!s110 1776582008
+VBVOa4EHXAG0ngS7cZIY]J1
+04 22 4 work tb_processor_fibonacci fast 0
+=1-000ae431a4f1-69e47d71-c9859-133f61
+R1
+R3
+R4
+R5
+R6
+n@_opt1
+R7
+R2
+valu
+Z8 2alu.v|instruction_mem.v|tb_processor.v|data_mem_cached.v|processor.v|decode.v|reg_file.v|defines.vh|system_top.v
+Z9 !s110 1776827401
+!i10b 1
+!s100 9;eJNigEHWehhTQIQf2c92
+I7U_LX3]D4^WI^02hJFe^71
+R2
+w1776579495
+8alu.v
+Falu.v
+!i122 2
+L0 5 31
+Z10 VDg1SIo80bB@j0V0VzS_@n1
+Z11 OL;L;2023.2;77
+r1
+!s85 0
+31
+Z12 !s108 1776827401.000000
+Z13 !s107 system_top.v|defines.vh|reg_file.v|decode.v|processor.v|data_mem_cached.v|tb_processor.v|instruction_mem.v|alu.v|
+Z14 !s90 alu.v|instruction_mem.v|tb_processor.v|data_mem_cached.v|processor.v|decode.v|reg_file.v|defines.vh|system_top.v|
+!i113 0
+Z15 o-L mtiAvm -L mtiRnm -L mtiOvm -L mtiUvm -L mtiUPF -L infact
+R6
+vdata_mem_cached
+R8
+R9
+!i10b 1
+!s100 3Q6aDA0LcmYLYSWoOoHQm2
+IJAk^?h:bU@F2HE@_kE3@Z2
+R2
+Z16 w1776827028
+8data_mem_cached.v
+Fdata_mem_cached.v
+Z17 8tb_processor.v
+Z18 Ftb_processor.v
+!i122 2
+L0 6 155
+R10
+R11
+r1
+!s85 0
+31
+R12
+R13
+R14
+!i113 0
+R15
+R6
+vdecode
+R8
+R9
+!i10b 1
+!s100 <fYDLPNPI?>J_D<iL[?2M3
+I:eeYh1J0Y[[RFj3jGMb`b0
+R2
+R16
+8decode.v
+Fdecode.v
+R17
+R18
+!i122 2
+L0 6 90
+R10
+R11
+r1
+!s85 0
+31
+R12
+R13
+R14
+!i113 0
+R15
+R6
+vinstruction_mem
+R8
+R9
+!i10b 1
+!s100 hi9<Gm?F;3dGSSZAL4JWf3
+IM6m^Thbg]h_9zJfLQ4[[D3
+R2
+w1776579485
+8instruction_mem.v
+Finstruction_mem.v
+!i122 2
+L0 9 23
+R10
+R11
+r1
+!s85 0
+31
+R12
+R13
+R14
+!i113 0
+R15
+R6
+vprocessor
+R8
+R9
+!i10b 1
+!s100 93OCW5:6SoFG=TiNe]4ZG0
+IS6O__bD0W:fRRCBH`1JR`2
+R2
+R16
+8processor.v
+Fprocessor.v
+R17
+R18
+!i122 2
+L0 11 310
+R10
+R11
+r1
+!s85 0
+31
+R12
+R13
+R14
+!i113 0
+R15
+R6
+vreg_file
+R8
+R9
+!i10b 1
+!s100 =Phk20NbJQ8aAjko@@DYL3
+IbmbYcEJDU94L:3kF7C2dm1
+R2
+R16
+8reg_file.v
+Freg_file.v
+R17
+R18
+!i122 2
+L0 3 38
+R10
+R11
+r1
+!s85 0
+31
+R12
+R13
+R14
+!i113 0
+R15
+R6
+vsystem_top
+R8
+R9
+!i10b 1
+!s100 jLU?f7:Caaa:;3iMl=IUU1
+I]hEP353Ag>aLo^YJjchTP0
+R2
+R16
+8system_top.v
+Fsystem_top.v
+R17
+R18
+!i122 2
+L0 18 106
+R10
+R11
+r1
+!s85 0
+31
+R12
+R13
+R14
+!i113 0
+R15
+R6
+vtb_processor
+R8
+R9
+!i10b 1
+!s100 TPZG8Je=AO@:K0EZ1_IK@1
+IhFY8XW=YUA<z5`QWV;:<Z3
+R2
+R16
+R17
+R18
+!i122 2
+L0 9 230
+R10
+R11
+r1
+!s85 0
+31
+R12
+R13
+R14
+!i113 0
+R15
+R6
+vtb_processor_fibonacci
+2tb_processor_fibonacci.v
+!s110 1776582000
+!i10b 1
+!s100 oCAXjO<iR6;hz=_X@BH2[2
+Ih9D>US9;FX2NF9fHLSfW>1
+R2
+w1776579523
+8tb_processor_fibonacci.v
+Ftb_processor_fibonacci.v
+!i122 1
+L0 9 245
+R10
+R11
+r1
+!s85 0
+31
+!s108 1776582000.000000
+!s107 defines.vh|tb_processor_fibonacci.v|
+!s90 tb_processor_fibonacci.v|
+!i113 0
+R15
+R6

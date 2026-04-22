@@ -1,0 +1,122 @@
+ 
+****************************************
+Report : timing
+        -path full
+        -delay max
+        -max_paths 1
+Design : system_top
+Version: U-2022.12-SP7
+Date   : Tue Apr 21 22:13:41 2026
+****************************************
+
+ # A fanout number of 1000 was used for high fanout net computations.
+
+Operating Conditions: typical   Library: osu05_stdcells
+Wire Load Model Mode: top
+
+  Startpoint: reset_pi (input port clocked by clka)
+  Endpoint: proc/pc_reg_reg[3]
+            (falling edge-triggered flip-flop clocked by clka)
+  Path Group: clka
+  Path Type: max
+
+  Point                                    Incr       Path
+  -----------------------------------------------------------
+  clock clka (rise edge)                   0.00       0.00
+  clock network delay (ideal)              0.00       0.00
+  input external delay                     1.00       1.00 r
+  reset_pi (in)                            0.23       1.23 r
+  U886/Y (INVX2)                           0.22       1.45 f
+  U112/Y (AND2X2)                          0.37       1.82 f
+  U727/Y (INVX2)                           0.42       2.24 r
+  U606/Y (OR2X1)                           0.36       2.60 r
+  U463/Y (BUFX2)                           0.38       2.97 r
+  proc/U464/Y (NOR2X1)                     0.31       3.29 f
+  proc/U436/Y (NAND2X1)                    0.36       3.65 r
+  U824/Y (INVX2)                           0.22       3.87 f
+  proc/U415/Y (AOI21X1)                    0.18       4.05 r
+  proc/U395/Y (OAI21X1)                    0.11       4.16 f
+  proc/U394/Y (AOI22X1)                    0.12       4.28 r
+  proc/U393/Y (NAND2X1)                    0.06       4.34 f
+  proc/pc_reg_reg[3]/D (DFFNEGX1)          0.00       4.34 f
+  data arrival time                                   4.34
+
+  clock clka (fall edge)                  10.00      10.00
+  clock network delay (ideal)              0.00      10.00
+  proc/pc_reg_reg[3]/CLK (DFFNEGX1)        0.00      10.00 f
+  library setup time                      -0.37       9.63
+  data required time                                  9.63
+  -----------------------------------------------------------
+  data required time                                  9.63
+  data arrival time                                  -4.34
+  -----------------------------------------------------------
+  slack (MET)                                         5.29
+
+
+  Startpoint: proc/ex_mem_aluM_reg[3]
+              (falling edge-triggered flip-flop clocked by clkb)
+  Endpoint: proc/ex_mem_aluM_reg[15]
+            (falling edge-triggered flip-flop clocked by clkb)
+  Path Group: clkb
+  Path Type: max
+
+  Point                                                   Incr       Path
+  --------------------------------------------------------------------------
+  clock clkb (fall edge)                                 10.00      10.00
+  clock network delay (ideal)                             0.00      10.00
+  proc/ex_mem_aluM_reg[3]/CLK (DFFNEGX1)                  0.00 #    10.00 f
+  proc/ex_mem_aluM_reg[3]/Q (DFFNEGX1)                    0.45      10.45 r
+  proc/dmem/U2971/Y (NOR2X1)                              0.93      11.38 f
+  U732/Y (INVX2)                                          0.22      11.60 r
+  U731/Y (INVX2)                                          0.59      12.19 f
+  U608/Y (INVX2)                                          0.17      12.36 r
+  U471/Y (INVX2)                                          0.55      12.91 f
+  proc/dmem/U2968/Y (AOI22X1)                             0.20      13.11 r
+  proc/dmem/U2965/Y (NAND2X1)                             0.12      13.23 f
+  U1218/Y (INVX2)                                         0.14      13.37 r
+  proc/dmem/U2964/Y (XOR2X1)                              0.19      13.55 f
+  proc/dmem/U13/Y (AND2X2)                                0.29      13.84 f
+  proc/dmem/U1046/Y (NAND3X1)                             0.33      14.17 r
+  U467/Y (OR2X1)                                          0.32      14.49 r
+  U317/Y (INVX2)                                          0.56      15.05 f
+  proc/dmem/U1040/Y (AOI22X1)                             0.25      15.30 r
+  proc/dmem/U1039/Y (NAND2X1)                             0.22      15.52 f
+  proc/U440/Y (AOI22X1)                                   0.14      15.65 r
+  U104/Y (AND2X2)                                         0.21      15.86 r
+  U728/Y (INVX2)                                          0.43      16.29 f
+  U127/Y (AND2X2)                                         0.40      16.69 f
+  proc/aluu/add_17/U1_1/YC (FAX1)                         0.42      17.10 f
+  proc/aluu/add_17/U1_2/YC (FAX1)                         0.46      17.56 f
+  proc/aluu/add_17/U1_3/YC (FAX1)                         0.46      18.02 f
+  proc/aluu/add_17/U1_4/YC (FAX1)                         0.46      18.48 f
+  proc/aluu/add_17/U1_5/YC (FAX1)                         0.46      18.93 f
+  proc/aluu/add_17/U1_6/YC (FAX1)                         0.46      19.39 f
+  proc/aluu/add_17/U1_7/YC (FAX1)                         0.46      19.85 f
+  proc/aluu/add_17/U1_8/YC (FAX1)                         0.46      20.30 f
+  proc/aluu/add_17/U1_9/YC (FAX1)                         0.46      20.76 f
+  proc/aluu/add_17/U1_10/YC (FAX1)                        0.46      21.22 f
+  proc/aluu/add_17/U1_11/YC (FAX1)                        0.46      21.67 f
+  proc/aluu/add_17/U1_12/YC (FAX1)                        0.46      22.13 f
+  proc/aluu/add_17/U1_13/YC (FAX1)                        0.46      22.59 f
+  proc/aluu/add_17/U1_14/YC (FAX1)                        0.46      23.04 f
+  proc/aluu/add_17/U1_15/YS (FAX1)                        0.44      23.49 r
+  proc/aluu/U104/Y (AOI22X1)                              0.14      23.63 f
+  proc/aluu/U97/Y (NAND3X1)                               0.23      23.85 r
+  proc/U466/Y (NAND2X1)                                   0.06      23.92 f
+  proc/U465/Y (OAI21X1)                                   0.12      24.04 r
+  proc/ex_mem_aluM_reg[15]/D (DFFNEGX1)                   0.00      24.04 r
+  data arrival time                                                 24.04
+
+  clock clkb (fall edge)                                 30.00      30.00
+  clock network delay (ideal)                             0.00      30.00
+  proc/ex_mem_aluM_reg[15]/CLK (DFFNEGX1)                 0.00      30.00 f
+  library setup time                                     -0.36      29.64
+  data required time                                                29.64
+  --------------------------------------------------------------------------
+  data required time                                                29.64
+  data arrival time                                                -24.04
+  --------------------------------------------------------------------------
+  slack (MET)                                                        5.60
+
+
+1

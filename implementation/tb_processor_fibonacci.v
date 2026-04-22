@@ -127,8 +127,9 @@ module tb_processor_fibonacci;
         load_word({`ADDI, 3'd4, 3'd4, 6'h3F});        //  9  count--
         load_word({`BNEZ, 3'd4, 3'd0, 6'b111001});    // 10  if count!=0 goto PC 4
         load_word({`LD,   3'd7, 3'd0, 6'd0});         // 11  R7 = MEM[0] (=1), explicit read test
-        load_word({`JAL,  3'd0, 9'b111111111});       // 12  JAL to self (infinite)
-        load_word({`HALT, 12'h000});                  // 13
+        // Adjacent LD; use-R hazard: exercises MEM->EX (dmem_rdata) forward path.
+        load_word({`ADD,  3'd6, 3'd7, 3'd7, 3'b000}); // 12  R6 = R7 + R7 = 2  (adjacent to PC 11)
+        load_word({`JAL,  3'd0, 9'b111111111});       // 13  JAL to self (infinite)
         load_word({`HALT, 12'h000});                  // 14
         load_word({`HALT, 12'h000});                  // 15
 
@@ -152,8 +153,9 @@ module tb_processor_fibonacci;
         dbg_read(7'h19, dbg_tmp); check16("IMEM[09]", dbg_tmp, {`ADDI, 3'd4, 3'd4, 6'h3F});
         dbg_read(7'h1A, dbg_tmp); check16("IMEM[10]", dbg_tmp, {`BNEZ, 3'd4, 3'd0, 6'b111001});
         dbg_read(7'h1B, dbg_tmp); check16("IMEM[11]", dbg_tmp, {`LD,   3'd7, 3'd0, 6'd0});
-        dbg_read(7'h1C, dbg_tmp); check16("IMEM[12]", dbg_tmp, {`JAL,  3'd0, 9'b111111111});
-        for (i = 13; i < 16; i = i + 1) begin
+        dbg_read(7'h1C, dbg_tmp); check16("IMEM[12]", dbg_tmp, {`ADD,  3'd6, 3'd7, 3'd7, 3'b000});
+        dbg_read(7'h1D, dbg_tmp); check16("IMEM[13]", dbg_tmp, {`JAL,  3'd0, 9'b111111111});
+        for (i = 14; i < 16; i = i + 1) begin
             dbg_read(7'h10 + i[6:0], dbg_tmp);
             if (dbg_tmp !== {`HALT, 12'h000}) begin
                 $display("  FAIL IMEM[%02d] : got 0x%04h, expected HALT", i, dbg_tmp);
@@ -195,7 +197,7 @@ module tb_processor_fibonacci;
         dbg_read(7'h03, dbg_tmp); check16("R3", dbg_tmp, 16'd8);
         dbg_read(7'h04, dbg_tmp); check16("R4", dbg_tmp, 16'd0);
         dbg_read(7'h05, dbg_tmp); check16("R5", dbg_tmp, 16'd34);
-        dbg_read(7'h06, dbg_tmp); check16("R6", dbg_tmp, 16'd0);
+        dbg_read(7'h06, dbg_tmp); check16("R6", dbg_tmp, 16'd2);  // MEM->EX forward (R7+R7)
         dbg_read(7'h07, dbg_tmp); check16("R7", dbg_tmp, 16'd1);
 
         // Data cache (dirty write-back): stored Fibonacci values at addresses 0..7.

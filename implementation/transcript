@@ -1,0 +1,86 @@
+# //  Questa Sim-64
+# //  Version 2023.2 linux_x86_64 Apr 11 2023
+# //
+# //  Copyright 1991-2023 Mentor Graphics Corporation
+# //  All Rights Reserved.
+# //
+# //  QuestaSim and its associated documentation contain trade
+# //  secrets and commercial or financial information that are the property of
+# //  Mentor Graphics Corporation and are privileged, confidential,
+# //  and exempt from disclosure under the Freedom of Information Act,
+# //  5 U.S.C. Section 552. Furthermore, this information
+# //  is prohibited from disclosure under the Trade Secrets Act,
+# //  18 U.S.C. Section 1905.
+# //
+# vsim -debugDB -voptargs=""+acc"" tb_processor 
+# Start time: 22:10:27 on Apr 21,2026
+# ** Note: (vsim-3813) Design is being optimized due to module recompilation...
+# ** Note: (vsim-8611) Generating debug db.
+# ** Warning: (vopt-10587) Some optimizations are turned off because the +acc switch is in effect. This will cause your simulation to run slowly. Please use -access/-debug to maintain needed visibility.
+# ** Note: (vopt-143) Recognized 1 FSM in module "data_mem_cached(fast)".
+# ** Note: (vsim-12126) Error and warning message counts have been restored: Errors=0, Warnings=1.
+# Loading work.tb_processor(fast)
+# Loading work.system_top(fast)
+# Loading work.instruction_mem(fast)
+# Loading work.processor(fast)
+# Loading work.decode(fast)
+# Loading work.reg_file(fast)
+# Loading work.data_mem_cached(fast)
+# Loading work.alu(fast)
+# ** Note: (vsim-8900) Creating design debug database vsim.dbg.
+add wave *
+run -all
+# 
+# ===== IMEM Verification (via debug port) =====
+#   OK   IMEM[00] = 20997 (0x5205)
+#   OK   IMEM[01] = 21507 (0x5403)
+#   OK   IMEM[02] = 5712 (0x1650)
+#   OK   IMEM[03] = -16192 (0xc0c0)
+#   OK   IMEM[04] = 22528 (0x5800)
+#   OK   IMEM[05] = -17664 (0xbb00)
+#   OK   IMEM[06] = 21119 (0x527f)
+#   OK   IMEM[07] = -24002 (0xa23e)
+#   OK   IMEM[08] = -17408 (0xbc00)
+#   OK   IMEM[09] = 8080 (0x1f90)
+#   OK   IMEM[10] = -32257 (0x81ff)
+#   OK   IMEM[11] = HALT
+#   OK   IMEM[12] = HALT
+#   OK   IMEM[13] = HALT
+#   OK   IMEM[14] = HALT
+#   OK   IMEM[15] = HALT
+# 
+# [7760000] Program loaded, execution begins
+# 
+# ===== Final State Check (cycle 1000, via debug port) =====
+# --- Register File ---
+#   R0 =      0  (0x0000)
+#   R1 =      0  (0x0000)
+#   R2 =      3  (0x0003)
+#   R3 =      8  (0x0008)
+#   R4 =      0  (0x0000)
+#   R5 =      8  (0x0008)
+#   R6 =      8  (0x0008)
+#   R7 =     11  (0x000b)
+# --- Register Checks ---
+#   OK   R0 = 0 (0x0000)
+#   OK   R1 = 0 (0x0000)
+#   OK   R2 = 3 (0x0003)
+#   OK   R3 = 8 (0x0008)
+#   OK   R4 = 0 (0x0000)
+#   OK   R5 = 8 (0x0008)
+#   OK   R6 = 8 (0x0008)
+#   OK   R7 = 11 (0x000b)
+# --- Data Cache (via debug port) ---
+#   OK   cache[0] word0 = 8 (0x0008)
+#   META[0] = 0x0006  (valid=1 dirty=1 tag=0)
+#   OK   META[0] = 6 (0x0006)
+#   DMEM[0] = 0 (0x0000) (backing store, not yet written back)
+# --- Pipeline ---
+#   PC (debug) = 13
+#   halted     = 1  (expected 0: HALT unreachable past JAL loop)
+# 
+# ALL CHECKS PASSED
+# 1
+# Break in Module tb_processor at tb_processor.v line 228
+# End time: 22:11:18 on Apr 21,2026, Elapsed time: 0:00:51
+# Errors: 0, Warnings: 1

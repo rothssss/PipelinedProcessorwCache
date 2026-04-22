@@ -1,8 +1,12 @@
 `include "defines.vh"
 
-// clka PC seq, clkb pipeline and regfile write and DMEM 
+// clka PC seq, clkb pipeline and regfile write and DMEM
 // Branch / JAL / RET resolved in EX. next_pc MUX: EX targets +1 sequential when no redirect.
 // if_instr_pi: fetched instruction word from external IMEM. pc_fetch_po: current PC for IMEM read.
+// Forwarding: EX/MEM->EX and MEM/WB->EX. For a load in MEM, the EX/MEM forward path
+// uses the combinational cache read dmem_rdata, so a back-to-back LD; use-R sequence
+// does not require a bubble. Only stall source is a cache miss (dmem_stall), which
+// freezes the whole pipeline until the miss is serviced.
 
 module processor (
     input wire clka,
@@ -125,17 +129,6 @@ module processor (
 
     wire [3:0] id_opc_d = if_id_instrM[15:12];
 
-    wire        id_ex_ld = id_ex_ctrlM[2];
-    wire        ex_ld    = ex_mem_ldM;
-    wire [2:0]  ex_rd    = ex_mem_rdM;
-    wire        stall_ld_exmem = ex_ld && (ex_rd != 3'b000) &&
-        ((uses_rs(id_ex_opcM) && (ex_rd == id_ex_rsM))
-         || (uses_rt(id_ex_opcM) && (ex_rd == id_ex_rtM)));
-    wire        stall_ld_idex = id_ex_ld && (id_ex_rdM != 3'b000) &&
-        ((uses_rs(id_opc_d) && (id_ex_rdM == din_rs))
-         || (uses_rt(id_opc_d) && (id_ex_rdM == din_rt)));
-    wire        stall_ld = stall_ld_exmem | stall_ld_idex;
-
     wire        dmem_req;
     wire        dmem_we;
     wire [4:0]  dmem_addr;
@@ -161,8 +154,6 @@ module processor (
     assign dmem_addr  = ex_mem_aluM[4:0];
     assign dmem_wdata = ex_mem_sdatM;
 
-    wire stall_total = stall_ld | dmem_stall;
-
     wire       id_ex_j  = id_ex_ctrlM[6];
     wire       id_ex_r  = id_ex_ctrlM[5];
     wire       id_ex_b  = id_ex_ctrlM[4];
@@ -170,15 +161,19 @@ module processor (
     wire [15:0] op1_fw;
     wire [15:0] op2_fw;
 
-    wire fwd_ex_rs = (ex_mem_rdM != 3'b000) && !ex_mem_ldM
+    // EX/MEM forward value: for a load in MEM, substitute the combinational cache read
+    // (dmem_rdata) for ex_mem_aluM, which holds the address rather than the loaded data.
+    wire [15:0] ex_mem_fw = ex_mem_ldM ? dmem_rdata : ex_mem_aluM;
+
+    wire fwd_ex_rs = (ex_mem_rdM != 3'b000)
         && (ex_mem_rdM == id_ex_rsM) && uses_rs(id_ex_opcM);
     wire fwd_wb_rs = (mem_wb_rdM != 3'b000) && (mem_wb_rdM == id_ex_rsM) && uses_rs(id_ex_opcM);
-    wire fwd_ex_rt = (ex_mem_rdM != 3'b000) && !ex_mem_ldM
+    wire fwd_ex_rt = (ex_mem_rdM != 3'b000)
         && (ex_mem_rdM == id_ex_rtM) && uses_rt(id_ex_opcM);
     wire fwd_wb_rt = (mem_wb_rdM != 3'b000) && (mem_wb_rdM == id_ex_rtM) && uses_rt(id_ex_opcM);
 
-    assign op1_fw = fwd_ex_rs ? ex_mem_aluM : (fwd_wb_rs ? wb_mux : id_ex_r1M);
-    assign op2_fw = fwd_ex_rt ? ex_mem_aluM : (fwd_wb_rt ? wb_mux : id_ex_r2M);
+    assign op1_fw = fwd_ex_rs ? ex_mem_fw : (fwd_wb_rs ? wb_mux : id_ex_r1M);
+    assign op2_fw = fwd_ex_rt ? ex_mem_fw : (fwd_wb_rt ? wb_mux : id_ex_r2M);
 
     wire [15:0] op2_alu  = (id_ex_opcM == `NOT) ? 16'b0 : op2_fw;
     wire [15:0] alu_res_raw;
@@ -200,7 +195,7 @@ module processor (
     wire [15:0] flow_add  = pc_ext + 16'd1 + id_ex_offM;
     wire [3:0]  flow_pc   = id_ex_r ? op1_fw[3:0] : flow_add[3:0];
 
-    wire flush = take_flow & ~stall_total;
+    wire flush = take_flow & ~dmem_stall;
 
     wire        halt_cpu = (if_id_instrM[15:12] == `HALT);
 
@@ -211,14 +206,14 @@ module processor (
     assign dbg_pc_po = pc_out; // for showing pc value. 
 
     // next_pc_sel: redirect on EX-stage control flow (branch/JAL/RET) else sequential word PC+1.
-    wire [3:0] next_pc_sel = take_flow & ~stall_total ? flow_pc : (pc_reg + 4'd1);
+    wire [3:0] next_pc_sel = take_flow & ~dmem_stall ? flow_pc : (pc_reg + 4'd1);
 
     // Sync reset: reset_pi is sampled on the active clock edge.
     // Caller must hold reset_pi high for >=1 full period of the relevant clock.
     always @(negedge clka) begin
         if (reset_pi)
             pc_reg <= 4'b0;
-        else if (~halt_cpu & ~stall_total)
+        else if (~halt_cpu & ~dmem_stall)
             pc_reg <= next_pc_sel;
     end
 
@@ -264,7 +259,7 @@ module processor (
             mem_wb_opcM   <= 4'b0;
             mem_wb_rdM    <= 3'b0;
             mem_wb_ldM    <= 1'b0;
-        end else if (~stall_total) begin
+        end else if (~dmem_stall) begin
             if (flush) begin
                 if_id_instrM <= 16'b0;
                 if_id_pcM    <= 4'b0;

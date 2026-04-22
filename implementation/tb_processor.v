@@ -121,9 +121,10 @@ module tb_processor;
         load_word({`LD,   3'd5, 3'd4, 6'd0});        //  5  R5 = MEM[0] (expect 8)
         load_word({`ADDI, 3'd1, 3'd1, 6'h3F});       //  6  R1 = R1-1 (loop body)
         load_word({`BNEZ, 3'd1, 3'd0, 6'b111110});   //  7  if R1!=0 goto PC 6
-        load_word({`JAL,  3'd0, 9'b111111111});       //  8  JAL to self (infinite)
-        load_word({`NOP,  12'h000});                  //  9  (unreachable)
-        load_word({`HALT, 12'h000});                  // 10
+        // Adjacent LD; use-R hazard: exercises the MEM->EX (dmem_rdata) forward path.
+        load_word({`LD,   3'd6, 3'd0, 6'd0});        //  8  R6 = MEM[0] (expect 8)
+        load_word({`ADD,  3'd7, 3'd6, 3'd2, 3'b000});//  9  R7 = R6 + R2 = 11  (adjacent to PC 8)
+        load_word({`JAL,  3'd0, 9'b111111111});       // 10  JAL to self (infinite)
         load_word({`HALT, 12'h000});                  // 11
         load_word({`HALT, 12'h000});                  // 12
         load_word({`HALT, 12'h000});                  // 13
@@ -146,9 +147,10 @@ module tb_processor;
         dbg_read(7'h15, dbg_tmp); check16("IMEM[05]", dbg_tmp, {`LD,   3'd5, 3'd4, 6'd0});
         dbg_read(7'h16, dbg_tmp); check16("IMEM[06]", dbg_tmp, {`ADDI, 3'd1, 3'd1, 6'h3F});
         dbg_read(7'h17, dbg_tmp); check16("IMEM[07]", dbg_tmp, {`BNEZ, 3'd1, 3'd0, 6'b111110});
-        dbg_read(7'h18, dbg_tmp); check16("IMEM[08]", dbg_tmp, {`JAL,  3'd0, 9'b111111111});
-        dbg_read(7'h19, dbg_tmp); check16("IMEM[09]", dbg_tmp, {`NOP,  12'h000});
-        for (i = 10; i < 16; i = i + 1) begin
+        dbg_read(7'h18, dbg_tmp); check16("IMEM[08]", dbg_tmp, {`LD,   3'd6, 3'd0, 6'd0});
+        dbg_read(7'h19, dbg_tmp); check16("IMEM[09]", dbg_tmp, {`ADD,  3'd7, 3'd6, 3'd2, 3'b000});
+        dbg_read(7'h1A, dbg_tmp); check16("IMEM[10]", dbg_tmp, {`JAL,  3'd0, 9'b111111111});
+        for (i = 11; i < 16; i = i + 1) begin
             dbg_read(7'h10 + i[6:0], dbg_tmp);
             if (dbg_tmp !== {`HALT, 12'h000}) begin
                 $display("  FAIL IMEM[%02d] : got 0x%04h, expected HALT", i, dbg_tmp);
@@ -190,8 +192,8 @@ module tb_processor;
         dbg_read(7'h03, dbg_tmp); check16("R3", dbg_tmp, 16'd8);
         dbg_read(7'h04, dbg_tmp); check16("R4", dbg_tmp, 16'd0);
         dbg_read(7'h05, dbg_tmp); check16("R5", dbg_tmp, 16'd8);
-        dbg_read(7'h06, dbg_tmp); check16("R6", dbg_tmp, 16'd0);
-        dbg_read(7'h07, dbg_tmp); check16("R7", dbg_tmp, 16'd0);
+        dbg_read(7'h06, dbg_tmp); check16("R6", dbg_tmp, 16'd8);  // LD at PC 8
+        dbg_read(7'h07, dbg_tmp); check16("R7", dbg_tmp, 16'd11); // MEM->EX forward (R6+R2)
 
         // Data cache: ST wrote 8 to address 0.
         // addr 0 -> cache index 0, word offset 0, tag 0.
