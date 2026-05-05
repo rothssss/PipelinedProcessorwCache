@@ -1,0 +1,25 @@
+#! /bin/bash
+#! /bin/bash -xvi
+
+ELEC_BIN='/clear/apps/elec8/bin'
+
+. ${ELEC_BIN}/.include/magic_env
+
+APP_PATH="${MAGIC_PATH}"
+
+PATH="${APP_PATH}:${PATH}"
+export PATH
+
+# Now, let's deal with the Joe's case:
+# has been an alias
+# magic='magic -T SCN3ME_SUBM.30'
+
+# (( )) is bash arithmetic context operator
+REGEXP=' -'
+#echo '$*: '$*
+if [[ " $*" =~ ${REGEXP} ]]; then # see if there is " -" in argument
+  ${APP_PATH}/$APP "$@"
+else  # Joe Cavallaro's usage pattern
+  ${APP_PATH}/magic -T '/clear/courses/elec422/bin/sky130A.tech' "$@"
+fi  
+
