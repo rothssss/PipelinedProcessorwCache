@@ -127,7 +127,8 @@ module tb_processor_fibonacci;
         load_word({`ADDI, 3'd4, 3'd4, 6'h3F});        //  9  count--
         load_word({`BNEZ, 3'd4, 3'd0, 6'b111001});    // 10  if count!=0 goto PC 4
         load_word({`LD,   3'd7, 3'd0, 6'd0});         // 11  R7 = MEM[0] (=1), explicit read test
-        // Adjacent LD; use-R hazard: exercises MEM->EX (dmem_rdata) forward path.
+
+        // Adjacent LD gives WAR, use mem to ex forwarding should be one stall. 
         load_word({`ADD,  3'd6, 3'd7, 3'd7, 3'b000}); // 12  R6 = R7 + R7 = 2  (adjacent to PC 11)
         load_word({`JAL,  3'd0, 9'b111111111});       // 13  JAL to self (infinite)
         load_word({`HALT, 12'h000});                  // 14
